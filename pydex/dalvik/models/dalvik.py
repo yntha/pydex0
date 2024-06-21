@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+import zlib
 
 from dataclasses import dataclass
 
@@ -72,3 +73,23 @@ class DalvikHeaderItem(DalvikItem):
     signature: bytes
     file_size: int
     byte_order: ByteOrder
+
+    @classmethod
+    def from_raw_item(cls, raw_item: DalvikHeader) -> DalvikHeaderItem:
+        """
+        Create a DalvikHeaderItem from a DalvikRawItem.
+        """
+
+        version = int(raw_item.magic[4:7])
+        checksum = raw_item.checksum
+        signature = raw_item.signature
+        file_size = raw_item.file_size
+
+        if raw_item.endian_tag == 0x12345678:
+            byte_order = ByteOrder.LITTLE_ENDIAN
+        elif raw_item.endian_tag == 0x78563412:
+            byte_order = ByteOrder.BIG_ENDIAN
+        else:
+            raise ValueError("Invalid endian tag")
+
+        return cls(raw_item, version, checksum, signature, file_size, byte_order)
