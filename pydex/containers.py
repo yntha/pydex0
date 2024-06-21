@@ -98,6 +98,11 @@ class InMemoryZipContainer(InMemoryDexContainer):
     """
     A class that represents an in-memory zip file which contains one or more
     dex files.
+
+    Parameters:
+        - data: bytes: The zip file data.
+        - root_only: bool: If True, only the root files in the archive will be
+            considered.
     """
 
     def __init__(self, data: bytes, root_only: bool = False):
@@ -131,6 +136,11 @@ class InMemoryZipContainer(InMemoryDexContainer):
 class ZipContainer(DexContainer):
     """
     A class that represents a zip file which contains one or more dex files.
+
+    Parameters:
+        - path: str: The path to the zip file.
+        - root_only: bool: If True, only the root files in the archive will be
+            considered.
     """
 
     def __init__(self, path: str, root_only: bool = False):
@@ -165,6 +175,9 @@ class InMemoryApkContainer(InMemoryContainer):
     """
     A class that represents an in-memory apk container which contains one or
     more apk files.
+
+    Parameters:
+        - data: bytes: The apk container file data.
     """
 
     def __init__(self, data: bytes):
@@ -180,6 +193,10 @@ class InMemoryApkContainer(InMemoryContainer):
     def fetch_dex_files(self, root_only: bool = False) -> Generator[DexFile, None, None]:
         """
         Lazily load the dex files in the base apk file.
+
+        Parameters:
+            - root_only: bool: If True, only the root files in the archive will
+                be considered.
         """
 
         zip_container = InMemoryZipContainer(self.get_base_apk(), root_only)
@@ -189,7 +206,11 @@ class InMemoryApkContainer(InMemoryContainer):
 
 class ApkContainer(Container):
     """
-    A class that represents a container file which contains one or more apk files.
+    A class that represents a container file which contains one or more apk
+    files.
+
+    Parameters:
+        - path: str: The path to the apk container file.
     """
 
     def __init__(self, path: str):
@@ -205,6 +226,10 @@ class ApkContainer(Container):
     def fetch_dex_files(self, root_only: bool = False) -> Generator[DexFile, None, None]:
         """
         Lazily load the dex files in the base apk file.
+
+        Parameters:
+            - root_only: bool: If True, only the root files in the archive will
+                be considered.
         """
 
         zip_container = InMemoryZipContainer(self.get_base_apk(), root_only)
@@ -217,6 +242,9 @@ class XApkContainer(ApkContainer):
     A class that represents a xapk file which contains one or more apk files.
     These conatiner files contain various apk files, whose purpose is noted in
     the `manifest.json` file.
+
+    Parameters:
+        - path: str: The path to the xapk file.
     """
 
     def __init__(self, path: str):
@@ -249,6 +277,9 @@ class ApksContainer(ApkContainer):
     """
     A class that represents an apks file which contains one or more apk files.
     This is also known as a split-apk.
+
+    Parameters:
+        - path: str: The path to the apks file.
     """
 
     def __init__(self, path: str):
@@ -271,6 +302,9 @@ class ApksContainer(ApkContainer):
 class JarContainer(ZipContainer):
     """
     A class that represents a jar file which contains one or more dex files.
+
+    Parameters:
+        - path: str: The path to the jar file.
     """
 
     def __init__(self, path: str):
