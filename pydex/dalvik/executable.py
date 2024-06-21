@@ -15,7 +15,7 @@ class DexFile:
         self.data = data
         self.stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
 
-        self.header = None
+        self.header: DalvikHeaderItem = typing.cast(DalvikHeaderItem, None)
 
     def parse_dex(self) -> typing.Self:
         """
