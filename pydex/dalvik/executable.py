@@ -17,6 +17,30 @@ class DexFile:
 
         self.header = None
 
+    def parse_dex(self) -> typing.Self:
+        """
+        Parse the dex file.
+        """
+
+        # reset the stream in case it was read from before
+        self.stream.seek(0)
+
+        # get the byte order of the dex file
+        # it is at 8 + 4 + 20 + 4 + 4 = 40
+        endian_tag = int.from_bytes(self.stream.seekpeek(40, 4))
+
+        if endian_tag == 0x12345678:
+            self.stream.byte_order = ByteOrder.LITTLE_ENDIAN
+        elif endian_tag == 0x78563412:
+            self.stream.byte_order = ByteOrder.BIG_ENDIAN
+        else:
+            raise ValueError("Invalid endian tag")
+
+        # parse the header
+        self.header = self.parse_header()
+
+        return self
+
     def parse_header(self) -> DalvikHeaderItem:
         """
         Parse the header of the dex file.
