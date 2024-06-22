@@ -64,7 +64,7 @@ class DexFile:
         # the magic bytes and this field, so 8 bytes + 4 bytes = 12 bytes to
         # skip.
         if checksum != zlib.adler32(self.data[12:]):
-            raise ValueError("Invalid checksum")
+            raise ValueError(f"Invalid checksum: {checksum}")
 
         # get the sha-1 signature bytes(fingerprint)
         signature = self.stream.read(20)
@@ -77,7 +77,7 @@ class DexFile:
 
         # according to the spec, this should always be == 0x70
         if header_size != 0x70:
-            raise ValueError("Invalid header size")
+            raise ValueError(f"Invalid header size: {header_size}")
 
         # get the endian tag
         endian_tag = self.stream.read_uint32()
@@ -102,7 +102,7 @@ class DexFile:
 
         # according to the spec, this should always be == 0xFFFF
         if type_ids_size <= 0xFFFF:
-            raise ValueError("Invalid type ids size")
+            raise ValueError(f"Invalid type ids size: {type_ids_size}")
 
         # get the type ids offset
         type_ids_off = self.stream.read_uint32()
@@ -112,7 +112,7 @@ class DexFile:
 
         # according to the spec, this should always be == 0xFFFF
         if proto_ids_size <= 0xFFFF:
-            raise ValueError("Invalid proto ids size")
+            raise ValueError(f"Invalid proto ids size: {proto_ids_size}")
 
         # get the proto ids offset
         proto_ids_off = self.stream.read_uint32()
@@ -140,7 +140,7 @@ class DexFile:
 
         # this field should be divisible by sizeof(uint)
         if data_size % struct.calcsize("I") != 0:
-            raise ValueError("Invalid data size")
+            raise ValueError(f"Invalid data size: {data_size}")
 
         # get the data offset
         data_off = self.stream.read_uint32()
