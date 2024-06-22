@@ -101,7 +101,7 @@ class DexFile:
         type_ids_size = self.stream.read_uint32()
 
         # according to the spec, this should always be == 0xFFFF
-        if type_ids_size != 0xFFFF:
+        if type_ids_size <= 0xFFFF:
             raise ValueError("Invalid type ids size")
 
         # get the type ids offset
@@ -111,7 +111,7 @@ class DexFile:
         proto_ids_size = self.stream.read_uint32()
 
         # according to the spec, this should always be == 0xFFFF
-        if proto_ids_size != 0xFFFF:
+        if proto_ids_size <= 0xFFFF:
             raise ValueError("Invalid proto ids size")
 
         # get the proto ids offset
