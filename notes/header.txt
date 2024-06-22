@@ -1,0 +1,26 @@
+for resources/dex-files/empty.dex
+==================================
+6465780A  magic number
+303335  version number
+00 null byte(corruption check)
+BE0B70D9  checksum(adler32)
+1D9C3F88730D0ED6CAA377D4520465E7322D365A  sha1 signature(fingerprint)
+8C000000  file size
+70000000  header size
+78563412  endian tag (little endian)
+00000000  link size
+00000000  link offset
+70000000  map offset
+00000000  string ids size
+00000000  string ids offset
+00000000  type ids size
+00000000  type ids offset
+00000000  proto ids size
+00000000  proto ids offset
+00000000  field ids size
+00000000  field ids offset
+00000000  method ids size
+00000000  method ids offset
+00000000  class defs size
+00000000  class defs offset
+1C000000  data size
