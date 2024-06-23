@@ -17,6 +17,15 @@ class DexFile:
 
         self.header: DalvikHeaderItem = typing.cast(DalvikHeaderItem, None)
 
+    @classmethod
+    def from_path(cls, path: str) -> DexFile:
+        """
+        Create a DexFile object from a file path.
+        """
+
+        with open(path, "rb") as f:
+            return cls(f.read())
+
     def parse_dex(self) -> typing.Self:
         """
         Parse the dex file.
