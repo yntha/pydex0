@@ -6,7 +6,7 @@ from pydex.dalvik import DexFile
 
 
 def get_test_dex() -> bytes:
-    root_dir = os.path.dirname(os.getcwd())
+    root_dir = os.getcwd()
 
     with open(os.path.join(root_dir, "resources", "dex-files", "empty.dex"), "rb") as test_dex:
         return test_dex.read()
