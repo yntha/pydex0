@@ -30,9 +30,9 @@ class DexFile:
         endian_tag = int.from_bytes(self.stream.seekpeek(40, 4))
 
         if endian_tag == 0x12345678:
-            self.stream.byte_order = ByteOrder.LITTLE_ENDIAN
+            self.stream.byteorder = ByteOrder.BIG_ENDIAN
         elif endian_tag == 0x78563412:
-            self.stream.byte_order = ByteOrder.BIG_ENDIAN
+            self.stream.byteorder = ByteOrder.LITTLE_ENDIAN
         else:
             raise ValueError("Invalid endian tag")
 
