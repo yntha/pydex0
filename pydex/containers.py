@@ -7,7 +7,7 @@ import json
 
 from collections.abc import Generator
 
-from pydex.dalvik.executable import DexFile
+from pydex.dalvik.executable import DexPool, DexFile
 
 
 class Container:
@@ -53,13 +53,12 @@ class DexContainer(Container):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self) -> DexPool:
         """
         Lazily load the dex files in the container file.
         """
 
-        for dex_file in self.enumerate_dex_files():
-            yield DexFile(self.get_dex_data(dex_file))
+        return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
 
 
 class InMemoryDexContainer(InMemoryContainer):
@@ -85,13 +84,12 @@ class InMemoryDexContainer(InMemoryContainer):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self) -> DexPool:
         """
         Lazily load the dex files in the container file.
         """
 
-        for dex_file in self.enumerate_dex_files():
-            yield DexFile(self.get_dex_data(dex_file))
+        return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
 
 
 class InMemoryZipContainer(InMemoryDexContainer):
@@ -190,7 +188,7 @@ class InMemoryApkContainer(InMemoryContainer):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self, root_only: bool = False) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self, root_only: bool = False) -> DexPool:
         """
         Lazily load the dex files in the base apk file.
 
@@ -223,7 +221,7 @@ class ApkContainer(Container):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self, root_only: bool = False) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self, root_only: bool = False) -> DexPool:
         """
         Lazily load the dex files in the base apk file.
 
