@@ -5,9 +5,20 @@ import struct
 import typing
 import zlib
 
+from dataclasses import dataclass
+
 from datastream import DeserializingStream, ByteOrder
 
 from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem
+
+
+@dataclass
+class DexPool:
+    """
+    A class that holds a pool of dex files.
+    """
+
+    dex_files: list[DexFile]
 
 
 class DexFile:

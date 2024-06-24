@@ -7,7 +7,7 @@ import json
 
 from collections.abc import Generator
 
-from pydex.dalvik.executable import DexFile
+from pydex.dalvik.executable import DexPool, DexFile
 
 
 class Container:
@@ -53,13 +53,12 @@ class DexContainer(Container):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self) -> DexPool:
         """
         Lazily load the dex files in the container file.
         """
 
-        for dex_file in self.enumerate_dex_files():
-            yield DexFile(self.get_dex_data(dex_file))
+        return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
 
 
 class InMemoryDexContainer(InMemoryContainer):
@@ -85,13 +84,12 @@ class InMemoryDexContainer(InMemoryContainer):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self) -> DexPool:
         """
         Lazily load the dex files in the container file.
         """
 
-        for dex_file in self.enumerate_dex_files():
-            yield DexFile(self.get_dex_data(dex_file))
+        return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
 
 
 class InMemoryZipContainer(InMemoryDexContainer):
@@ -145,33 +143,18 @@ class ZipContainer(DexContainer):
 
     def __init__(self, path: str, root_only: bool = False):
         self.root_only = root_only
+        self.internal_container = InMemoryZipContainer(pathlib.Path(path).read_bytes())
 
         super().__init__(path)
 
     def enumerate_dex_files(self) -> Generator[str, None, None]:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
-            for file in zip_file.namelist():
-                file: pathlib.Path = pathlib.Path(file)
-
-                if self.root_only:
-                    if file.parent.name != "":
-                        continue
-
-                    if file.suffix == ".dex":
-                        yield file.name
-
-                    continue
-
-                if file.suffix == ".dex":
-                    yield file.name
+        return self.internal_container.enumerate_dex_files()
 
     def get_dex_data(self, dex_file: str) -> bytes:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
-            with zip_file.open(dex_file, "r") as file:
-                return file.read()
+        return self.internal_container.get_dex_data(dex_file)
 
 
-class InMemoryApkContainer(InMemoryContainer):
+class InMemoryMultiAPKContainer(InMemoryContainer):
     """
     A class that represents an in-memory apk container which contains one or
     more apk files.
@@ -190,7 +173,7 @@ class InMemoryApkContainer(InMemoryContainer):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self, root_only: bool = False) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self, root_only: bool = False) -> DexPool:
         """
         Lazily load the dex files in the base apk file.
 
@@ -204,7 +187,7 @@ class InMemoryApkContainer(InMemoryContainer):
         return zip_container.fetch_dex_files()
 
 
-class ApkContainer(Container):
+class MultiAPKContainer(Container):
     """
     A class that represents a container file which contains one or more apk
     files.
@@ -223,7 +206,7 @@ class ApkContainer(Container):
 
         raise NotImplementedError()
 
-    def fetch_dex_files(self, root_only: bool = False) -> Generator[DexFile, None, None]:
+    def fetch_dex_files(self, root_only: bool = False) -> DexPool:
         """
         Lazily load the dex files in the base apk file.
 
@@ -237,21 +220,20 @@ class ApkContainer(Container):
         return zip_container.fetch_dex_files()
 
 
-class XApkContainer(ApkContainer):
+class InMemoryXAPKContainer(InMemoryMultiAPKContainer):
     """
-    A class that represents a xapk file which contains one or more apk files.
-    These conatiner files contain various apk files, whose purpose is noted in
-    the `manifest.json` file.
+    A class that represents an in-memory xapk container file which contains one
+    or more apk files.
 
     Parameters:
-        - path: str: The path to the xapk file.
+        - data: bytes: The xapk container file data.
     """
 
-    def __init__(self, path: str):
-        super().__init__(path)
+    def __init__(self, data: bytes):
+        super().__init__(data)
 
     def get_base_apk(self) -> bytes:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
+        with zipfile.ZipFile(io.BytesIO(self.data), "r") as zip_file:
             for file in zip_file.namelist():
                 file: pathlib.Path = pathlib.Path(file)
 
@@ -273,20 +255,37 @@ class XApkContainer(ApkContainer):
                 raise FileNotFoundError("Manifest file not found in xapk file.")
 
 
-class ApksContainer(ApkContainer):
+class XAPKContainer(MultiAPKContainer):
     """
-    A class that represents an apks file which contains one or more apk files.
-    This is also known as a split-apk.
+    A class that represents a xapk file which contains one or more apk files.
+    These conatiner files contain various apk files, whose purpose is noted in
+    the `manifest.json` file.
 
     Parameters:
-        - path: str: The path to the apks file.
+        - path: str: The path to the xapk file.
     """
 
     def __init__(self, path: str):
         super().__init__(path)
 
     def get_base_apk(self) -> bytes:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
+        return InMemoryXAPKContainer(pathlib.Path(self.path).read_bytes()).get_base_apk()
+
+
+class InMemoryAPKSContainer(InMemoryMultiAPKContainer):
+    """
+    A class that represents an in-memory apks container file which contains one
+    or more apk files.
+
+    Parameters:
+        - data: bytes: The apks container file data.
+    """
+
+    def __init__(self, data: bytes):
+        super().__init__(data)
+
+    def get_base_apk(self) -> bytes:
+        with zipfile.ZipFile(io.BytesIO(self.data), "r") as zip_file:
             for file in zip_file.namelist():
                 file: pathlib.Path = pathlib.Path(file)
 
@@ -299,6 +298,22 @@ class ApksContainer(ApkContainer):
                 raise FileNotFoundError("Base apk not found in apks file.")
 
 
+class APKSContainer(MultiAPKContainer):
+    """
+    A class that represents an apks file which contains one or more apk files.
+    This is also known as a split-apk.
+
+    Parameters:
+        - path: str: The path to the apks file.
+    """
+
+    def __init__(self, path: str):
+        super().__init__(path)
+
+    def get_base_apk(self) -> bytes:
+        return InMemoryAPKSContainer(pathlib.Path(self.path).read_bytes()).get_base_apk()
+
+
 class JarContainer(ZipContainer):
     """
     A class that represents a jar file which contains one or more dex files.
@@ -309,3 +324,16 @@ class JarContainer(ZipContainer):
 
     def __init__(self, path: str):
         super().__init__(path)
+
+
+class APKContainer(ZipContainer):
+    """
+    A class that represents an apk file which contains one or more dex files.
+    Only the root files in the archive will be considered.
+
+    Parameters:
+        - path: str: The path to the apk file.
+    """
+
+    def __init__(self, path: str):
+        super().__init__(path, root_only=True)
