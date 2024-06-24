@@ -208,6 +208,10 @@ class LazyDalvikString:
             A loaded DalvikStringItem.
         """
 
+        # save the current position so to not disrupt the processing flow.
+        # we should NOT use stream.clone() here as this will copy the entire
+        # stream for every string item which is not efficient.
+        pos = stream.tell()
         stream.seek(self.string_id.string_data_off)
 
         offset = stream.tell()
@@ -216,6 +220,9 @@ class LazyDalvikString:
 
         leb128_size = sizeof_uleb128(utf16_size)
         item_data = stream.seekpeek(self.string_id.string_data_off, leb128_size + utf16_size)
+
+        # restore the position
+        stream.seek(pos)
 
         return DalvikStringItem(
             DalvikStringData(offset, sizeof_uleb128(utf16_size), item_data, utf16_size, data),
