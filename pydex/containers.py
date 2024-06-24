@@ -235,6 +235,41 @@ class MultiAPKContainer(Container):
         return zip_container.fetch_dex_files()
 
 
+class InMemoryXAPKContainer(InMemoryMultiAPKContainer):
+    """
+    A class that represents an in-memory xapk container file which contains one
+    or more apk files.
+
+    Parameters:
+        - data: bytes: The xapk container file data.
+    """
+
+    def __init__(self, data: bytes):
+        super().__init__(data)
+
+    def get_base_apk(self) -> bytes:
+        with zipfile.ZipFile(io.BytesIO(self.data), "r") as zip_file:
+            for file in zip_file.namelist():
+                file: pathlib.Path = pathlib.Path(file)
+
+                if file.name != "manifest.json":
+                    continue
+
+                with zip_file.open(str(file), "r") as manifest_file:
+                    manifest = json.load(manifest_file)
+
+                    for split_apk in manifest["split_apks"]:
+                        if split_apk["id"] != "base":
+                            continue
+
+                        with zip_file.open(split_apk["file"], "r") as base_apk_file:
+                            return base_apk_file.read()
+                    else:
+                        raise ValueError("Base apk not found in manifest file.")
+            else:
+                raise FileNotFoundError("Manifest file not found in xapk file.")
+
+
 class XAPKContainer(MultiAPKContainer):
     """
     A class that represents a xapk file which contains one or more apk files.
@@ -271,7 +306,33 @@ class XAPKContainer(MultiAPKContainer):
                 raise FileNotFoundError("Manifest file not found in xapk file.")
 
 
-class ApksContainerMulti(MultiAPKContainer):
+class InMemoryAPKSContainer(InMemoryMultiAPKContainer):
+    """
+    A class that represents an in-memory apks container file which contains one
+    or more apk files.
+
+    Parameters:
+        - data: bytes: The apks container file data.
+    """
+
+    def __init__(self, data: bytes):
+        super().__init__(data)
+
+    def get_base_apk(self) -> bytes:
+        with zipfile.ZipFile(io.BytesIO(self.data), "r") as zip_file:
+            for file in zip_file.namelist():
+                file: pathlib.Path = pathlib.Path(file)
+
+                if file.name != "base.apk":
+                    continue
+
+                with zip_file.open(str(file), "r") as base_apk_file:
+                    return base_apk_file.read()
+            else:
+                raise FileNotFoundError("Base apk not found in apks file.")
+
+
+class APKSContainer(MultiAPKContainer):
     """
     A class that represents an apks file which contains one or more apk files.
     This is also known as a split-apk.
