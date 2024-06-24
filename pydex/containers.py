@@ -169,7 +169,7 @@ class ZipContainer(DexContainer):
                 return file.read()
 
 
-class InMemoryApkContainer(InMemoryContainer):
+class InMemoryMultiAPKContainer(InMemoryContainer):
     """
     A class that represents an in-memory apk container which contains one or
     more apk files.
