@@ -218,6 +218,9 @@ class LazyDalvikString:
         utf16_size = stream.read_uleb128()
         data = stream.read(utf16_size)
 
+        if utf16_size != len(data):
+            raise ValueError(f"Invalid data size: {utf16_size} at offset 0x{offset:08X}")
+
         leb128_size = sizeof_uleb128(utf16_size)
         item_data = stream.seekpeek(self.string_id.string_data_off, leb128_size + utf16_size)
 
