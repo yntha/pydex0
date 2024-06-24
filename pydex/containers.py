@@ -324,3 +324,16 @@ class JarContainer(ZipContainer):
 
     def __init__(self, path: str):
         super().__init__(path)
+
+
+class APKContainer(ZipContainer):
+    """
+    A class that represents an apk file which contains one or more dex files.
+    Only the root files in the archive will be considered.
+
+    Parameters:
+        - path: str: The path to the apk file.
+    """
+
+    def __init__(self, path: str):
+        super().__init__(path, root_only=True)
