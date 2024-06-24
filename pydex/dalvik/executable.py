@@ -69,8 +69,10 @@ class DexFile:
         Parse the header of the dex file.
         """
 
+        clonestream = self.stream.clone()
+
         # get the magic bytes
-        magic = self.stream.read(8)
+        magic = clonestream.read(8)
 
         # the magic bytes are not constant, as they contain a version number
         # dex\0x0Axxx\x00, where xxx is the version number(zero padded).
@@ -81,7 +83,7 @@ class DexFile:
             raise ValueError("Invalid magic bytes")
 
         # get the checksum
-        checksum = self.stream.read_uint32()
+        checksum = clonestream.read_uint32()
 
         # verify the checksum. the checksum applies to the entire file except
         # the magic bytes and this field, so 8 bytes + 4 bytes = 12 bytes to
@@ -90,83 +92,83 @@ class DexFile:
             raise ValueError(f"Invalid checksum: {checksum}")
 
         # get the sha-1 signature bytes(fingerprint)
-        signature = self.stream.read(20)
+        signature = clonestream.read(20)
 
         # get the file size
-        file_size = self.stream.read_uint32()
+        file_size = clonestream.read_uint32()
 
         # get the header size
-        header_size = self.stream.read_uint32()
+        header_size = clonestream.read_uint32()
 
         # according to the spec, this should always be == 0x70
         if header_size != 0x70:
             raise ValueError(f"Invalid header size: {header_size}")
 
         # get the endian tag
-        endian_tag = self.stream.read_uint32()
+        endian_tag = clonestream.read_uint32()
 
         # get the link size
-        link_size = self.stream.read_uint32()
+        link_size = clonestream.read_uint32()
 
         # get the link offset
-        link_off = self.stream.read_uint32()
+        link_off = clonestream.read_uint32()
 
         # get the map offset
-        map_off = self.stream.read_uint32()
+        map_off = clonestream.read_uint32()
 
         # get the string ids size
-        string_ids_size = self.stream.read_uint32()
+        string_ids_size = clonestream.read_uint32()
 
         # get the string ids offset
-        string_ids_off = self.stream.read_uint32()
+        string_ids_off = clonestream.read_uint32()
 
         # get the type ids size
-        type_ids_size = self.stream.read_uint32()
+        type_ids_size = clonestream.read_uint32()
 
         # according to the spec, this should always be <= 0xFFFF
         if type_ids_size >= 0xFFFF:
             raise ValueError(f"Invalid type ids size: {type_ids_size}")
 
         # get the type ids offset
-        type_ids_off = self.stream.read_uint32()
+        type_ids_off = clonestream.read_uint32()
 
         # get the proto ids size
-        proto_ids_size = self.stream.read_uint32()
+        proto_ids_size = clonestream.read_uint32()
 
         # according to the spec, this should always be <= 0xFFFF
         if proto_ids_size >= 0xFFFF:
             raise ValueError(f"Invalid proto ids size: {proto_ids_size}")
 
         # get the proto ids offset
-        proto_ids_off = self.stream.read_uint32()
+        proto_ids_off = clonestream.read_uint32()
 
         # get the field ids size
-        field_ids_size = self.stream.read_uint32()
+        field_ids_size = clonestream.read_uint32()
 
         # get the field ids offset
-        field_ids_off = self.stream.read_uint32()
+        field_ids_off = clonestream.read_uint32()
 
         # get the method ids size
-        method_ids_size = self.stream.read_uint32()
+        method_ids_size = clonestream.read_uint32()
 
         # get the method ids offset
-        method_ids_off = self.stream.read_uint32()
+        method_ids_off = clonestream.read_uint32()
 
         # get the class defs size
-        class_defs_size = self.stream.read_uint32()
+        class_defs_size = clonestream.read_uint32()
 
         # get the class defs offset
-        class_defs_off = self.stream.read_uint32()
+        class_defs_off = clonestream.read_uint32()
 
         # get the data size
-        data_size = self.stream.read_uint32()
+        data_size = clonestream.read_uint32()
 
         # this field should be divisible by sizeof(uint)
         if data_size % struct.calcsize("I") != 0:
             raise ValueError(f"Invalid data size: {data_size}")
 
         # get the data offset
-        data_off = self.stream.read_uint32()
+        data_off = clonestream.read_uint32()
 
         return DalvikHeaderItem.from_raw_item(
             DalvikHeader(
@@ -207,13 +209,14 @@ class DexFile:
         """
 
         lazy_strings = []
+        clonestream = self.stream.clone()
 
         for i in range(self.header.raw_item.string_ids_size):
-            self.stream.seek(self.header.raw_item.string_ids_off + i * 4)
-            string_id_off = self.stream.tell()
+            clonestream.seek(self.header.raw_item.string_ids_off + i * 4)
+            string_id_off = clonestream.tell()
 
-            string_data_off = self.stream.read_uint32()
-            self.stream.seek(string_data_off)
+            string_data_off = clonestream.read_uint32()
+            clonestream.seek(string_data_off)
 
             lazy_strings.append(
                 LazyDalvikString(
