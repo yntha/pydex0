@@ -202,7 +202,7 @@ class InMemoryApkContainer(InMemoryContainer):
         return zip_container.fetch_dex_files()
 
 
-class MultiApkContainer(Container):
+class MultiAPKContainer(Container):
     """
     A class that represents a container file which contains one or more apk
     files.
@@ -235,7 +235,7 @@ class MultiApkContainer(Container):
         return zip_container.fetch_dex_files()
 
 
-class XMultiApkContainer(MultiApkContainer):
+class XAPKContainer(MultiAPKContainer):
     """
     A class that represents a xapk file which contains one or more apk files.
     These conatiner files contain various apk files, whose purpose is noted in
@@ -271,7 +271,7 @@ class XMultiApkContainer(MultiApkContainer):
                 raise FileNotFoundError("Manifest file not found in xapk file.")
 
 
-class ApksContainerMulti(MultiApkContainer):
+class ApksContainerMulti(MultiAPKContainer):
     """
     A class that represents an apks file which contains one or more apk files.
     This is also known as a split-apk.
