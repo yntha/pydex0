@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import struct
 import typing
 import zlib
@@ -9,7 +8,7 @@ from dataclasses import dataclass
 
 from datastream import DeserializingStream, ByteOrder
 
-from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem
+from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem, LazyDalvikString, DalvikStringID
 
 
 @dataclass
@@ -27,6 +26,7 @@ class DexFile:
         self.stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
 
         self.header: DalvikHeaderItem = typing.cast(DalvikHeaderItem, None)
+        self.strings: list[LazyDalvikString] = []
 
     @classmethod
     def from_path(cls, path: str) -> DexFile:
@@ -58,6 +58,9 @@ class DexFile:
 
         # parse the header
         self.header = self.parse_header()
+
+        # collect all the dalvik string items as LazyDalvikStrings
+        self.strings = self.parse_strings()
 
         return self
 
@@ -195,3 +198,33 @@ class DexFile:
                 data_off=data_off,
             )
         )
+
+    def parse_strings(self) -> list[LazyDalvikString]:
+        """
+        Collect all the dalvik string items.
+
+        Returns: The dalvik string items as LazyDalvikStrings.
+        """
+
+        lazy_strings = []
+
+        for i in range(self.header.raw_item.string_ids_size):
+            self.stream.seek(self.header.raw_item.string_ids_off + i * 4)
+            string_id_off = self.stream.tell()
+
+            string_data_off = self.stream.read_uint32()
+            self.stream.seek(string_data_off)
+
+            lazy_strings.append(
+                LazyDalvikString(
+                    DalvikStringID(
+                        offset=string_id_off,
+                        size=4,
+                        data=self.data[string_id_off : string_id_off + 4],
+                        string_data_off=string_data_off,
+                        id_number=i,
+                    )
+                )
+            )
+
+        return lazy_strings
