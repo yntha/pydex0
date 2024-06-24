@@ -19,15 +19,6 @@ class DalvikRawItem:
 
 
 @dataclass
-class DalvikItem:
-    """
-    A class that represents a high-level item in a dex file.
-    """
-
-    raw_item: DalvikRawItem
-
-
-@dataclass
 class DalvikHeader(DalvikRawItem):
     """
     A class that represents the raw header of a dex file.
@@ -62,11 +53,12 @@ class DalvikHeader(DalvikRawItem):
 
 
 @dataclass
-class DalvikHeaderItem(DalvikItem):
+class DalvikHeaderItem:
     """
     A class that represents the high-level header of a dex file.
     """
 
+    raw_item: DalvikHeader
     version: int
     checksum: int
     signature: bytes
@@ -121,11 +113,12 @@ class DalvikStringData(DalvikRawItem):
 
 
 @dataclass
-class DalvikStringItem(DalvikItem):
+class DalvikStringItem:
     """
     A class that represents a high-level string data item in a dex file.
     """
 
+    raw_item: DalvikStringData
     string_id: DalvikStringID
 
     @classmethod
