@@ -143,30 +143,15 @@ class ZipContainer(DexContainer):
 
     def __init__(self, path: str, root_only: bool = False):
         self.root_only = root_only
+        self.internal_container = InMemoryZipContainer(pathlib.Path(path).read_bytes())
 
         super().__init__(path)
 
     def enumerate_dex_files(self) -> Generator[str, None, None]:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
-            for file in zip_file.namelist():
-                file: pathlib.Path = pathlib.Path(file)
-
-                if self.root_only:
-                    if file.parent.name != "":
-                        continue
-
-                    if file.suffix == ".dex":
-                        yield file.name
-
-                    continue
-
-                if file.suffix == ".dex":
-                    yield file.name
+        return self.internal_container.enumerate_dex_files()
 
     def get_dex_data(self, dex_file: str) -> bytes:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
-            with zip_file.open(dex_file, "r") as file:
-                return file.read()
+        return self.internal_container.get_dex_data(dex_file)
 
 
 class InMemoryMultiAPKContainer(InMemoryContainer):
@@ -284,26 +269,7 @@ class XAPKContainer(MultiAPKContainer):
         super().__init__(path)
 
     def get_base_apk(self) -> bytes:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
-            for file in zip_file.namelist():
-                file: pathlib.Path = pathlib.Path(file)
-
-                if file.name != "manifest.json":
-                    continue
-
-                with zip_file.open(str(file), "r") as manifest_file:
-                    manifest = json.load(manifest_file)
-
-                    for split_apk in manifest["split_apks"]:
-                        if split_apk["id"] != "base":
-                            continue
-
-                        with zip_file.open(split_apk["file"], "r") as base_apk_file:
-                            return base_apk_file.read()
-                    else:
-                        raise ValueError("Base apk not found in manifest file.")
-            else:
-                raise FileNotFoundError("Manifest file not found in xapk file.")
+        return InMemoryXAPKContainer(pathlib.Path(self.path).read_bytes()).get_base_apk()
 
 
 class InMemoryAPKSContainer(InMemoryMultiAPKContainer):
@@ -345,17 +311,7 @@ class APKSContainer(MultiAPKContainer):
         super().__init__(path)
 
     def get_base_apk(self) -> bytes:
-        with zipfile.ZipFile(self.path, "r") as zip_file:
-            for file in zip_file.namelist():
-                file: pathlib.Path = pathlib.Path(file)
-
-                if file.name != "base.apk":
-                    continue
-
-                with zip_file.open(str(file), "r") as base_apk_file:
-                    return base_apk_file.read()
-            else:
-                raise FileNotFoundError("Base apk not found in apks file.")
+        return InMemoryAPKSContainer(pathlib.Path(self.path).read_bytes()).get_base_apk()
 
 
 class JarContainer(ZipContainer):
