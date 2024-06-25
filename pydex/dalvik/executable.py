@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from datastream import DeserializingStream, ByteOrder
 
-from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem, LazyDalvikString, DalvikStringID
+from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem, LazyDalvikString, DalvikStringID, DalvikStringItem
 
 
 @dataclass
@@ -231,3 +231,17 @@ class DexFile:
             )
 
         return lazy_strings
+
+    def load_all_strings(self) -> list[DalvikStringItem]:
+        """
+        Load all the dalvik string items.
+
+        Returns: All the dalvik string items for this dex file.
+        """
+
+        strings = []
+
+        for lazy_string in self.strings:
+            strings.append(lazy_string.load(self.stream))
+
+        return strings
