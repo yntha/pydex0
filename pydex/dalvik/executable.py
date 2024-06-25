@@ -245,3 +245,37 @@ class DexFile:
             strings.append(lazy_string.load(self.stream))
 
         return strings
+
+    def get_string_by_id(self, string_id: int) -> LazyDalvikString:
+        """
+        Get a dalvik string by its id. The difference between this, and
+        `dex.strings[id]` is that this method does not require all the strings
+        to be collected from the dex file. This method is useful when you only
+        need a single string from the dex file and don't want to load the
+        entire dex file with `parse_dex`.
+
+        Args:
+            string_id: The id of the string to get. IDs are 0-indexed, and are
+                   assigned in the order they appear in the dex file.
+
+        Returns: A `LazyDalvikString` object.
+        """
+
+        if len(self.strings) > 0:
+            return self.strings[string_id]
+
+        clonestream = self.stream.clone()
+        clonestream.seek(self.header.raw_item.string_ids_off + string_id * 4)
+
+        string_id_off = clonestream.tell()
+        string_data_off = clonestream.read_uint32()
+
+        return LazyDalvikString(
+            DalvikStringID(
+                offset=string_id_off,
+                size=4,
+                data=self.data[string_id_off : string_id_off + 4],
+                string_data_off=string_data_off,
+                id_number=string_id,
+            )
+        )
