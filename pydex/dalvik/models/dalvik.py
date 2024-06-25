@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import typing
-import zlib
-
 from dataclasses import dataclass
 
-from datastream import ByteOrder
+from datastream import ByteOrder, DeserializingStream
+
+from pydex.util import sizeof_uleb128
 
 
 @dataclass
@@ -17,15 +16,6 @@ class DalvikRawItem:
     offset: int
     size: int
     data: bytes
-
-
-@dataclass
-class DalvikItem:
-    """
-    A class that represents a high-level item in a dex file.
-    """
-
-    raw_item: DalvikRawItem
 
 
 @dataclass
@@ -63,11 +53,12 @@ class DalvikHeader(DalvikRawItem):
 
 
 @dataclass
-class DalvikHeaderItem(DalvikItem):
+class DalvikHeaderItem:
     """
     A class that represents the high-level header of a dex file.
     """
 
+    raw_item: DalvikHeader
     version: int
     checksum: int
     signature: bytes
@@ -93,3 +84,154 @@ class DalvikHeaderItem(DalvikItem):
             raise ValueError("Invalid endian tag")
 
         return cls(raw_item, version, checksum, signature, file_size, byte_order)
+
+
+@dataclass
+class DalvikStringID(DalvikRawItem):
+    """
+    A class that represents the raw string id of a dex file. Aligns to 4 bytes.
+
+    Source:
+        https://source.android.com/docs/core/runtime/dex-format#string-item
+    """
+
+    string_data_off: int  # 4 bytes
+    id_number: int
+
+
+@dataclass
+class DalvikStringData(DalvikRawItem):
+    """
+    A class that represents the raw string data of a dex file.
+
+    Source:
+        https://source.android.com/docs/core/runtime/dex-format#string-data-item
+    """
+
+    utf16_size: int  # uleb128
+    string_data: bytes  # mutf8 encoded
+
+
+@dataclass
+class DalvikStringItem:
+    """
+    A class that represents a high-level string data item in a dex file.
+    """
+
+    raw_item: DalvikStringData
+    string_id: DalvikStringID
+    _value: str = ""
+
+    @classmethod
+    def from_raw_item(cls, raw_item: DalvikStringData, string_id: DalvikStringID) -> DalvikStringItem:
+        """
+        Create a DalvikStringItem from a DalvikStringID and DalvikStringData.
+
+        Args:
+            raw_item: The DalvikStringData that will contain the data of this item.
+            string_id: The DalvikStringID.
+        """
+
+        return cls(raw_item, string_id)
+
+    @property
+    def value(self) -> str:
+        """
+        Get the value of the string decoded as MUTF-8.
+
+        Returns:
+            The MUTF-8 decoded string.
+        """
+        # check if the value is already decoded
+        if self._value:
+            return self._value
+
+        data = bytearray(self.raw_item.string_data)
+        decoded = ""
+
+        while len(data) > 0:
+            b = data.pop(0)
+
+            if b & 0x80 == 0x00:
+                decoded += chr(b)
+            elif b & 0xE0 == 0xC0:
+                decoded += chr(((b & 0x1F) << 6) | (data.pop(0) & 0x3F))
+            elif b & 0xF0 == 0xE0:
+                decoded += chr(((b & 0x0F) << 12) | ((data.pop(0) & 0x3F) << 6) | (data.pop(0) & 0x3F))
+            else:
+                raise ValueError("Invalid MUTF-8 sequence")
+
+        self._value = decoded
+
+        return decoded
+
+    @value.setter
+    def value(self, value: str):
+        """
+        Set the value of the dalvik string encoded as MUTF-8.
+
+        Args:
+            value: The string value to set.
+        """
+        encoded = bytearray()
+
+        for char in value:
+            codepoint = ord(char)
+
+            if codepoint <= 0x7F:
+                encoded.append(codepoint)
+            elif codepoint <= 0x7FF:
+                encoded.append(0xC0 | ((codepoint >> 6) & 0x1F))
+                encoded.append(0x80 | (codepoint & 0x3F))
+            elif codepoint <= 0xFFFF:
+                encoded.append(0xE0 | ((codepoint >> 12) & 0x0F))
+                encoded.append(0x80 | ((codepoint >> 6) & 0x3F))
+                encoded.append(0x80 | (codepoint & 0x3F))
+            else:
+                raise ValueError("Invalid codepoint")
+
+        self.raw_item.string_data = bytes(encoded)
+        self.raw_item.utf16_size = len(encoded)
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclass
+class LazyDalvikString:
+    """
+    A class that represents a dalvik string which can be loaded at any time.
+    """
+
+    string_id: DalvikStringID
+
+    def load(self, stream: DeserializingStream) -> DalvikStringItem:
+        """
+        Load the string from the stream.
+
+        Args:
+            stream: The DeserializingStream to read from.
+        Returns:
+            A loaded DalvikStringItem.
+        """
+
+        # save the current position so to not disrupt the processing flow.
+        # we should NOT use stream.clone() here as this will copy the entire
+        # stream for every string item which is not efficient.
+        pos = stream.tell()
+        stream.seek(self.string_id.string_data_off)
+
+        offset = stream.tell()
+        utf16_size = stream.read_uleb128()
+        data = stream.read(utf16_size)
+
+        leb128_size = sizeof_uleb128(utf16_size)
+        item_data = stream.seekpeek(self.string_id.string_data_off, leb128_size + utf16_size)
+
+        # restore the position
+        stream.seek(pos)
+
+        return DalvikStringItem(
+            DalvikStringData(offset, sizeof_uleb128(utf16_size) + len(data), item_data, utf16_size, data),
+            self.string_id,
+        )
