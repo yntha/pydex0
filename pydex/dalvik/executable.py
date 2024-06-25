@@ -37,9 +37,11 @@ class DexFile:
         with open(path, "rb") as f:
             return cls(f.read())
 
-    def parse_dex(self) -> typing.Self:
+    def parse_dex_prologue(self) -> typing.Self:
         """
-        Parse the dex file.
+        Helper function that does misc startup tasks for parsing the dex file.
+
+        Returns: The dex file object.
         """
 
         # reset the stream in case it was read from before
@@ -58,6 +60,15 @@ class DexFile:
 
         # parse the header
         self.header = self.parse_header()
+
+        return self
+
+    def parse_dex(self) -> typing.Self:
+        """
+        Parse the dex file.
+        """
+
+        self.parse_dex_prologue()
 
         # collect all the dalvik string items as LazyDalvikStrings
         self.strings = self.parse_strings()
@@ -208,6 +219,9 @@ class DexFile:
         Returns: The dalvik string items as LazyDalvikStrings.
         """
 
+        if self.header is None:
+            self.parse_dex_prologue()
+
         lazy_strings = []
         clonestream = self.stream.clone()
 
@@ -260,6 +274,9 @@ class DexFile:
 
         Returns: A `LazyDalvikString` object.
         """
+
+        if self.header is None:
+            self.parse_dex_prologue()
 
         if len(self.strings) > 0:
             return self.strings[string_id]
