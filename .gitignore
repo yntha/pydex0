@@ -167,3 +167,4 @@ src/test_client.py
 utils/javaenum2py.py
 .env.secrets
 chat/*.log
+/sample.py
