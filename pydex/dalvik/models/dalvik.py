@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from datastream import ByteOrder, DeserializingStream
 
-from pydex.util import sizeof_uleb128, sizeof_sleb128
+from pydex.util import sizeof_uleb128
 
 
 @dataclass
@@ -120,6 +120,7 @@ class DalvikStringItem:
 
     raw_item: DalvikStringData
     string_id: DalvikStringID
+    _value: str = ""
 
     @classmethod
     def from_raw_item(cls, raw_item: DalvikStringData, string_id: DalvikStringID) -> DalvikStringItem:
@@ -141,6 +142,10 @@ class DalvikStringItem:
         Returns:
             The MUTF-8 decoded string.
         """
+        # check if the value is already decoded
+        if self._value:
+            return self._value
+
         data = bytearray(self.raw_item.string_data)
         decoded = ""
 
@@ -155,6 +160,8 @@ class DalvikStringItem:
                 decoded += chr(((b & 0x0F) << 12) | ((data.pop(0) & 0x3F) << 6) | (data.pop(0) & 0x3F))
             else:
                 raise ValueError("Invalid MUTF-8 sequence")
+
+        self._value = decoded
 
         return decoded
 
