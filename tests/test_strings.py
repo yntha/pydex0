@@ -49,3 +49,13 @@ def test_string_parse():
     assert strings[8].raw_item.utf16_size == 12
     assert strings[8].string_id.id_number == 8
     assert strings[8].value == "Ltest/klass;"
+
+
+def test_fetch_single_string():
+    dex = DexFile(get_test_dex())
+
+    # const-string
+    const_string_ref = dex.get_string_by_id(4)
+    const_string = const_string_ref.load(dex.stream)
+
+    assert const_string.value == "Hello World! :)"
