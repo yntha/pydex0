@@ -235,6 +235,6 @@ class LazyDalvikString:
         stream.seek(pos)
 
         return DalvikStringItem(
-            DalvikStringData(offset, sizeof_uleb128(utf16_size), item_data, utf16_size, data),
+            DalvikStringData(offset, sizeof_uleb128(utf16_size) + len(data), item_data, utf16_size, data),
             self.string_id,
         )
