@@ -1,0 +1,17 @@
+site_name: pydex - Python Dex Parser
+repo_url: https://github.com/ynthal/pydex0
+site_description: Powerful, yet easy to use, python library for loading(and eventually writing) dex files.
+site_author: yntha(Anthy)
+copyright: Copyright 2024, yntha(Anthy)
+nav:
+  - Home: index.md
+  - "Getting Started":
+    - Installation: home/installation.md
+    - Usage: home/usage.md
+  - "API Reference":
+    - "pydex.containers": api/pydex/containers.md
+    - "pydex.dalvik": api/pydex/dalvik.md
+    - "pydex.dalvik.models": api/pydex/dalvik/models.md
+    - "pydex.util": api/pydex/util.md
+theme:
+  name: readthedocs
