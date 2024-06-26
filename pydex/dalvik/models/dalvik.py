@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 from dataclasses import dataclass
 
 from datastream import ByteOrder, DeserializingStream
@@ -193,6 +195,26 @@ class DalvikStringItem:
         self.raw_item.string_data = bytes(encoded)
         self.raw_item.utf16_size = len(encoded)
 
+    async def get_value_async(self) -> str:
+        """
+        Get the value of the string decoded as MUTF-8 asynchronously.
+
+        Returns:
+            The MUTF-8 decoded string.
+        """
+
+        return await asyncio.to_thread(self.__class__.value.fget)
+
+    async def set_value_async(self, value: str):
+        """
+        Set the value of the dalvik string encoded as MUTF-8 asynchronously.
+
+        Args:
+            value: The string value to set.
+        """
+
+        return await asyncio.to_thread(self.__class__.value.fset, value)
+
     def __str__(self) -> str:
         return self.value
 
@@ -235,3 +257,14 @@ class LazyDalvikString:
             DalvikStringData(offset, sizeof_uleb128(utf16_size) + len(data), item_data, utf16_size, data),
             self.string_id,
         )
+
+    async def load_async(self, stream: DeserializingStream) -> DalvikStringItem:
+        """
+        Load the string from the stream asynchronously.
+        Args:
+            stream: The DeserializingStream to read from.
+
+        Returns: A loaded DalvikStringItem.
+        """
+
+        return await asyncio.to_thread(self.load, stream)

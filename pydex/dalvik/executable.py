@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import struct
 import typing
 import zlib
@@ -212,6 +213,15 @@ class DexFile:
             )
         )
 
+    async def parse_header_async(self) -> DalvikHeaderItem:
+        """
+        Parse the header of the dex file asynchronously.
+
+        Returns: The header of the dex file.
+        """
+
+        return await asyncio.to_thread(self.parse_header)
+
     def parse_strings(self) -> list[LazyDalvikString]:
         """
         Collect all the dalvik string items.
@@ -246,6 +256,15 @@ class DexFile:
 
         return lazy_strings
 
+    async def parse_strings_async(self) -> list[LazyDalvikString]:
+        """
+        Collect all the dalvik string items asynchronously.
+
+        Returns: The dalvik string items as LazyDalvikStrings.
+        """
+
+        return await asyncio.to_thread(self.parse_strings)
+
     def load_all_strings(self) -> list[DalvikStringItem]:
         """
         Load all the dalvik string items.
@@ -259,6 +278,15 @@ class DexFile:
             strings.append(lazy_string.load(self.stream))
 
         return strings
+
+    async def load_all_strings_async(self) -> list[DalvikStringItem]:
+        """
+        Load all the dalvik string items asynchronously.
+
+        Returns: All the dalvik string items for this dex file.
+        """
+
+        return await asyncio.to_thread(self.load_all_strings)
 
     def get_string_by_id(self, string_id: int) -> LazyDalvikString:
         """
