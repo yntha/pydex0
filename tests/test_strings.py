@@ -59,3 +59,15 @@ def test_fetch_single_string():
     const_string = const_string_ref.load(dex.stream)
 
     assert const_string.value == "Hello World! :)"
+
+
+def test_set_string_value():
+    dex = DexFile(get_test_dex())
+
+    # const-string
+    const_string_ref = dex.get_string_by_id(4)
+    const_string = const_string_ref.load(dex.stream)
+
+    const_string.value = "Hello World! :D"
+
+    assert const_string.value == "Hello World! :D"

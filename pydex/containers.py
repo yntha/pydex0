@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import io
 import zipfile
 import pathlib
@@ -60,6 +61,15 @@ class DexContainer(Container):
 
         return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
 
+    async def fetch_dex_files_async(self) -> DexPool:
+        """
+        Lazily load the dex files in the container file asynchronously.
+
+        Returns: A DexPool object containing the dex files.
+        """
+
+        return await asyncio.to_thread(self.fetch_dex_files)
+
 
 class InMemoryDexContainer(InMemoryContainer):
     """
@@ -90,6 +100,15 @@ class InMemoryDexContainer(InMemoryContainer):
         """
 
         return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
+
+    async def fetch_dex_files_async(self) -> DexPool:
+        """
+        Lazily load the dex files in the container file asynchronously.
+
+        Returns: A DexPool object containing the dex files.
+        """
+
+        return await asyncio.to_thread(self.fetch_dex_files)
 
 
 class InMemoryZipContainer(InMemoryDexContainer):
@@ -180,11 +199,26 @@ class InMemoryMultiAPKContainer(InMemoryContainer):
         Parameters:
             - root_only: bool: If True, only the root files in the archive will
                 be considered.
+
+        Returns: A DexPool object containing the dex files.
         """
 
         zip_container = InMemoryZipContainer(self.get_base_apk(), root_only)
 
         return zip_container.fetch_dex_files()
+
+    async def fetch_dex_files_async(self, root_only: bool = False) -> DexPool:
+        """
+        Lazily load the dex files in the base apk file asynchronously.
+
+        Parameters:
+            - root_only: bool: If True, only the root files in the archive will
+                be considered.
+
+        Returns: A DexPool object containing the dex files.
+        """
+
+        return await asyncio.to_thread(self.fetch_dex_files, root_only)
 
 
 class MultiAPKContainer(Container):
@@ -213,11 +247,26 @@ class MultiAPKContainer(Container):
         Parameters:
             - root_only: bool: If True, only the root files in the archive will
                 be considered.
+
+        Returns: A DexPool object containing the dex files.
         """
 
         zip_container = InMemoryZipContainer(self.get_base_apk(), root_only)
 
         return zip_container.fetch_dex_files()
+
+    async def fetch_dex_files_async(self, root_only: bool = False) -> DexPool:
+        """
+        Lazily load the dex files in the base apk file asynchronously.
+
+        Parameters:
+            - root_only: bool: If True, only the root files in the archive will
+                be considered.
+
+        Returns: A DexPool object containing the dex files.
+        """
+
+        return await asyncio.to_thread(self.fetch_dex_files, root_only)
 
 
 class InMemoryXAPKContainer(InMemoryMultiAPKContainer):
