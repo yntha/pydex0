@@ -2,37 +2,42 @@
 
 This module contains classes that represent the different container files that contain one or more DEX files. The classes in this module are:
 
-- [`Container`](#pydexcontainerscontainerpath-str-top): Base class for all container classes.
-- [`InMemoryContainer`](#pydexcontainersinmemorycontainerdata-bytes-top): Base class for all container classes that point to an in-memory file-like container.
-- [`DexContainer`](#pydexcontainersdexcontainerpath-str-top): Base class for all container classes that point to a file which contains one or more DEX files.
-- [`InMemoryDexContainer`](#pydexcontainersinmemorydexcontainerdata-bytes-top): Base class for all container classes that point to an in-memory file-like object which contains one or more DEX files.
-- [`ZipContainer`](#pydexcontainerszipcontainerpath-str-top): Class that represents a ZIP file that contains one or more DEX files.
-- [`InMemoryZipContainer`](#pydexcontainersinmemoryzipcontainerdata-bytes-top): Class that represents an in-memory ZIP file that contains one or more DEX files.
-- [`MultiAPKContainer`](#pydexcontainersmultiapkcontainerpath-str-top): Base class that represents a container file which contains one or more APK files. Only the `base` apk is scanned for DEX files.
-- [`InMemoryMultiAPKContainer`](#pydexcontainersinmemorymultiapkcontainerdata-bytes-top): Base class that represents an in-memory container file which contains one or more APK files. Only the `base` apk is scanned for DEX files.
-- [`InMemoryXAPKContainer`](#pydexcontainersinmemoryxapkcontainerdata-bytes-top): Class that represents an in-memory `.xapk` file.
-- [`XAPKContainer`](#pydexcontainersxapkcontainerpath-str-top): Class that represents a `.xapk` file.
-- [`InMemoryAPKSContainer`](#pydexcontainersinmemoryapkscontainerdata-bytes-top): Class that represents an in-memory `.apks` file.
-- [`APKSContainer`](#pydexcontainersapkscontainerpath-str-top): Class that represents a `.apks` file.
-- [`JarContainer`](#pydexcontainersjarcontainerpath-str-top): Class that represents a JAR file.
-- [`APKContainer`](#pydexcontainersapkcontainerpath-str-top): Class that represents an APK file.
+- [`Container`](#pydexcontainerscontainerpath-str): Base class for all container classes.
+- [`InMemoryContainer`](#pydexcontainersinmemorycontainerdata-bytes): Base class for all container classes that point to an in-memory file-like container.
+- [`DexContainer`](#pydexcontainersdexcontainerpath-str): Base class for all container classes that point to a file which contains one or more DEX files.
+- [`InMemoryDexContainer`](#pydexcontainersinmemorydexcontainerdata-bytes): Base class for all container classes that point to an in-memory file-like object which contains one or more DEX files.
+- [`ZipContainer`](#pydexcontainerszipcontainerpath-str): Class that represents a ZIP file that contains one or more DEX files.
+- [`InMemoryZipContainer`](#pydexcontainersinmemoryzipcontainerdata-bytes): Class that represents an in-memory ZIP file that contains one or more DEX files.
+- [`MultiAPKContainer`](#pydexcontainersmultiapkcontainerpath-str): Base class that represents a container file which contains one or more APK files. Only the `base` apk is scanned for DEX files.
+- [`InMemoryMultiAPKContainer`](#pydexcontainersinmemorymultiapkcontainerdata-bytes): Base class that represents an in-memory container file which contains one or more APK files. Only the `base` apk is scanned for DEX files.
+- [`InMemoryXAPKContainer`](#pydexcontainersinmemoryxapkcontainerdata-bytes): Class that represents an in-memory `.xapk` file.
+- [`XAPKContainer`](#pydexcontainersxapkcontainerpath-str): Class that represents a `.xapk` file.
+- [`InMemoryAPKSContainer`](#pydexcontainersinmemoryapkscontainerdata-bytes): Class that represents an in-memory `.apks` file.
+- [`APKSContainer`](#pydexcontainersapkscontainerpath-str): Class that represents a `.apks` file.
+- [`JarContainer`](#pydexcontainersjarcontainerpath-str): Class that represents a JAR file.
+- [`APKContainer`](#pydexcontainersapkcontainerpath-str): Class that represents an APK file.
 
 ## Classes
-#### `pydex.containers.Container(path: str)` [\[top\]](#containers-source)
+#### `pydex.containers.Container(path: str)`
 Base class that represents a container file(zip, apk, xapk, apks, etc.) which contains either apk files or dex files.
+
 
 Arguments:
 
 - `path`: The file path to the container file.
+
 -------
-#### `pydex.containers.InMemoryContainer(data: bytes)` [\[top\]](#containers-source)
+[\[top\]](#containers-source)
+#### `pydex.containers.InMemoryContainer(data: bytes)`
 Base class that represents an in-memory container which contains either apk files or dex files.
 
 Arguments:
 
 - `data`: The bytes object that contains the in-memory container.
+
 -------
-#### `pydex.containers.DexContainer(path: str)` [\[top\]](#containers-source)
+[\[top\]](#containers-source)
+#### `pydex.containers.DexContainer(path: str)`
 Bases: `pydex.containers.Container`
 
 Base class for all container classes that point to a file which contains one or more DEX files.
@@ -42,6 +47,7 @@ Arguments:
 - `path`: The file path to the container file.
 
 Members:
+
 - `enumerate_dex_files(self) -> Generator[str, None, None]`: Enumerates the DEX files in the container. Must be implemented by subclasses. You should not call this method directly. Use `fetch_dex_files` or `fetch_dex_files_async` instead.
 
     Returns:
@@ -72,9 +78,11 @@ Members:
     Returns:
 
     - A `DexPool` object that contains all the DEX files in the container.
+
 -------
-#### `pydex.containers.InMemoryDexContainer(data: bytes)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.InMemoryContainer`](#pydexcontainersinmemorycontainerdata-bytes-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.InMemoryDexContainer(data: bytes)`
+Bases: [`pydex.containers.InMemoryContainer`](#pydexcontainersinmemorycontainerdata-bytes)
 
 Base class for all container classes that point to an in-memory file-like object which contains one or more DEX files.
 
@@ -114,9 +122,11 @@ Members:
     Returns:
 
     - A `DexPool` object that contains all the DEX files in the container.
+
 -------
-#### `pydex.containers.ZipContainer(path: str)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.DexContainer`](#pydexcontainersdexcontainerpath-str-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.ZipContainer(path: str)`
+Bases: [`pydex.containers.DexContainer`](#pydexcontainersdexcontainerpath-str)
 
 Class that represents a ZIP file that contains one or more DEX files.
 
@@ -141,9 +151,11 @@ Members:
     Returns:
 
     - The data of the DEX file.
+
 -------
-#### `pydex.containers.InMemoryZipContainer(data: bytes)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.InMemoryDexContainer`](#pydexcontainersinmemorydexcontainerdata-bytes-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.InMemoryZipContainer(data: bytes)`
+Bases: [`pydex.containers.InMemoryDexContainer`](#pydexcontainersinmemorydexcontainerdata-bytes)
 
 Class that represents a ZIP file that contains one or more DEX files.
 
@@ -168,9 +180,11 @@ Members:
     Returns:
 
     - The data of the DEX file.
+
 -------
-#### `pydex.containers.MultiAPKContainer(path: str)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.Container`](#pydexcontainerscontainerpath-str-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.MultiAPKContainer(path: str)`
+Bases: [`pydex.containers.Container`](#pydexcontainerscontainerpath-str)
 
 Base class that represents a container file which contains one or more APK files. Only the `base` apk is scanned for DEX files.
 
@@ -205,9 +219,11 @@ Members:
     Returns:
 
     - A `DexPool` object that contains all the DEX files in the `base` APK file.
+
 -------
-#### `pydex.containers.InMemoryMultiAPKContainer(data: bytes)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.InMemoryContainer`](#pydexcontainersinmemorycontainerdata-bytes-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.InMemoryMultiAPKContainer(data: bytes)`
+Bases: [`pydex.containers.InMemoryContainer`](#pydexcontainersinmemorycontainerdata-bytes)
 
 Base class that represents an in-memory container file which contains one or more APK files. Only the `base` apk is scanned for DEX files.
 
@@ -242,9 +258,11 @@ Members:
     Returns:
 
     - A `DexPool` object that contains all the DEX files in the `base` APK file.
+
 -------
-#### `pydex.containers.InMemoryXAPKContainer(data: bytes)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.InMemoryMultiAPKContainer`](#pydexcontainersinmemorymultiapkcontainerdata-bytes-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.InMemoryXAPKContainer(data: bytes)`
+Bases: [`pydex.containers.InMemoryMultiAPKContainer`](#pydexcontainersinmemorymultiapkcontainerdata-bytes)
 
 Class that represents an in-memory `.xapk` file. `.xapk` files are zip files that contain numerous apk files for different architectures, locales, and screen densities, among the `base` apk. The `base` apk is typically the apk file that contains a package name for the file name. Among the contents of the container, there exists a `manifest.json` file that contains metadata about the container, including the file name of the `base` apk.
 
@@ -264,9 +282,11 @@ Members:
 
     - `FileNotFoundError`: If the `manifest.json` file is not found in the container.
     - `ValueError`: If the `base` apk file is not found in the manifest file.
+
 -------
-#### `pydex.containers.XAPKContainer(path: str)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.MultiAPKContainer`](#pydexcontainersmultiapkcontainerpath-str-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.XAPKContainer(path: str)`
+Bases: [`pydex.containers.MultiAPKContainer`](#pydexcontainersmultiapkcontainerpath-str)
 
 Class that represents an `.xapk` file. `.xapk` files are zip files that contain numerous apk files for different architectures, locales, and screen densities, among the `base` apk. The `base` apk is typically the apk file that contains a package name for the file name. Among the contents of the container, there exists a `manifest.json` file that contains metadata about the container, including the file name of the `base` apk.
 
@@ -286,9 +306,11 @@ Members:
 
     - `FileNotFoundError`: If the `manifest.json` file is not found in the container.
     - `ValueError`: If the `base` apk file is not found in the manifest file.
+
 -------
-#### `pydex.containers.InMemoryAPKSContainer(data: bytes)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.InMemoryMultiAPKContainer`](#pydexcontainersinmemorymultiapkcontainerdata-bytes-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.InMemoryAPKSContainer(data: bytes)`
+Bases: [`pydex.containers.InMemoryMultiAPKContainer`](#pydexcontainersinmemorymultiapkcontainerdata-bytes)
 
 Class that represents an in-memory `.apks` file. `.apks` files are zip files that contain numerous apk files for specific architectures, locales, and screen densities, among the `base` apk.
 
@@ -308,9 +330,11 @@ Members:
 
     - `FileNotFoundError`: If the `manifest.json` file is not found in the container.
     - `ValueError`: If the `base` apk file is not found in the manifest file.
+
 -------
-#### `pydex.containers.APKSContainer(path: str)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.MultiAPKContainer`](#pydexcontainersmultiapkcontainerpath-str-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.APKSContainer(path: str)`
+Bases: [`pydex.containers.MultiAPKContainer`](#pydexcontainersmultiapkcontainerpath-str)
 
 Class that represents an `.apks` file. `.apks` files are zip files that contain numerous apk files for specific architectures, locales, and screen densities, among the `base` apk.
 
@@ -330,18 +354,22 @@ Members:
 
     - `FileNotFoundError`: If the `manifest.json` file is not found in the container.
     - `ValueError`: If the `base` apk file is not found in the manifest file.
+
 -------
-#### `pydex.containers.JarContainer(path: str)` [\[top\]](#containers-source)
-Bases: [`pydex.containers.DexContainer`](#pydexcontainersdexcontainerpath-str-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.JarContainer(path: str)`
+Bases: [`pydex.containers.DexContainer`](#pydexcontainersdexcontainerpath-str)
 
 Class that represents a JAR file. JAR files are zip files that contain Java class files, however, `dx` may convert them to DEX files while retaining the `.jar` extension and format.
 
 Arguments:
 
 - `path`: The file path to the JAR file.
+
 -------
-#### `pydex.containers.APKContainer(path: str)` [\[top\]](#containers-source)
-Bases: [`pydex.containersZipContainer`](#pydexcontainerszipcontainerpath-str-top)
+[\[top\]](#containers-source)
+#### `pydex.containers.APKContainer(path: str)`
+Bases: [`pydex.containers.ZipContainer`](#pydexcontainerszipcontainerpath-str)
 
 Class that represents an APK file. APK files are zip files that contain Android application files, resource files, and DEX files.
 
