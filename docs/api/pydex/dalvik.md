@@ -3,7 +3,7 @@
 This module contains classes for parsing and representing various Dalvik structures. The primary class of focus is `DexFile`, which is used to load and represent a DEX file. The following classes are defined in this module:
 
 - [`DexFile`](#pydexdalvikdexfiledata-bytes): Represents a DEX file. Can be loaded from a bytes object or a file path.
-- [`DexPool`](): Represents a collection of DEX files. A DexPool is returned by the [container]() class functions.
+- [`DexPool`](#pydexdalvikdexpool): Represents a collection of DEX files. A DexPool is returned by the [container]() class functions.
 
 
 ## Classes
