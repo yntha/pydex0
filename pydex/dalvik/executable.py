@@ -14,25 +14,46 @@ from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem, LazyDalvikString
 
 @dataclass
 class DexPool:
-    """
-    A class that holds a pool of dex files.
+    """A container for managing a collection of DexFile instances.
+
+    This class provides a centralized structure for storing and managing multiple DexFile objects,
+    allowing for operations that need to interact with or manipulate multiple dex files simultaneously.
+    It is particularly useful in scenarios where dex files need to be aggregated for analysis,
+    modification, or querying in a unified manner.
     """
 
-    dex_files: list[DexFile]
+    dex_files: list[DexFile]  #: The list of dex files that are managed by this pool.
 
 
 class DexFile:
-    def __init__(self, data: bytes):
-        self.data = data
-        self.stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    """Represents a Dex file and provides methods to parse and manipulate it.
 
+    This class encapsulates the functionality required to parse and interact with
+    the contents of a Dex (Dalvik Executable) file. It provides methods to parse
+    the file both synchronously and asynchronously.
+
+    :param data: The raw bytes of the dex file.
+    """
+
+    def __init__(self, data: bytes):
+        #: The raw bytes of the dex file.
+        self.data: bytes = data
+
+        #: The stream used to read the dex file.
+        self.stream: DeserializingStream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+        #: The header of the dex file.
         self.header: DalvikHeaderItem = typing.cast(DalvikHeaderItem, None)
+
+        #: The list of dalvik string items in the dex file.
         self.strings: list[LazyDalvikString] = []
 
     @classmethod
     def from_path(cls, path: str) -> DexFile:
         """
         Create a DexFile object from a file path.
+
+        :param path: The path to the dex file.
         """
 
         with open(path, "rb") as f:
@@ -42,7 +63,7 @@ class DexFile:
         """
         Helper function that does misc startup tasks for parsing the dex file.
 
-        Returns: The dex file object.
+        :raises ValueError: If the endian tag is invalid.
         """
 
         # reset the stream in case it was read from before
@@ -65,8 +86,10 @@ class DexFile:
         return self
 
     def parse_dex(self) -> typing.Self:
-        """
-        Parse the dex file.
+        """Parse the DEX file.
+
+        This function will attempt to entirely parse this DEX file in one go and fill in all the uninitialized class
+        attributes.
         """
 
         self.parse_dex_prologue()
@@ -77,8 +100,17 @@ class DexFile:
         return self
 
     def parse_header(self) -> DalvikHeaderItem:
-        """
+        r"""
         Parse the header of the dex file.
+
+        Raises:
+            ValueError:
+                - If the first 4 bytes don't match ``dex\x0A``.
+                - If the checksum is invalid.
+                - If the header size is not ``0x70``.
+                - If the type ids size is greater than or equal to ``0xFFFF``.
+                - If the proto ids size is greater than or equal to ``0xFFFF``.
+                - If the data size is not divisible by the size of an unsigned integer.
         """
 
         clonestream = self.stream.clone()
@@ -214,19 +246,26 @@ class DexFile:
         )
 
     async def parse_header_async(self) -> DalvikHeaderItem:
-        """
-        Parse the header of the dex file asynchronously.
+        r"""
+        Parse the header of the dex file.
 
-        Returns: The header of the dex file.
+        Raises:
+            ValueError:
+                - If the first 4 bytes don't match ``dex\x0A``.
+                - If the checksum is invalid.
+                - If the header size is not ``0x70``.
+                - If the type ids size is greater than or equal to ``0xFFFF``.
+                - If the proto ids size is greater than or equal to ``0xFFFF``.
+                - If the data size is not divisible by the size of an unsigned integer.
         """
 
         return await asyncio.to_thread(self.parse_header)
 
     def parse_strings(self) -> list[LazyDalvikString]:
-        """
-        Collect all the dalvik string items.
+        """Collect all the dalvik string items.
 
-        Returns: The dalvik string items as LazyDalvikStrings.
+        This function collects all the dalvik string items in this DEX file and returns them as a list of
+        ``LazyDalvikString``. A clone stream is used so to not alter the DEX file stream.
         """
 
         if self.header is None:
@@ -257,19 +296,19 @@ class DexFile:
         return lazy_strings
 
     async def parse_strings_async(self) -> list[LazyDalvikString]:
-        """
-        Collect all the dalvik string items asynchronously.
+        """Collect all the dalvik string items.
 
-        Returns: The dalvik string items as LazyDalvikStrings.
+        This function collects all the dalvik string items in this DEX file and returns them as a list of
+        ``LazyDalvikString``. A clone stream is used so to not alter the DEX file stream.
         """
 
         return await asyncio.to_thread(self.parse_strings)
 
     def load_all_strings(self) -> list[DalvikStringItem]:
-        """
-        Load all the dalvik string items.
+        """Load all the dalvik string items asynchronously.
 
-        Returns: All the dalvik string items for this dex file.
+        This function invokes the ``load()`` function for all the lazy dalvik strings in the :attr:`strings` attribute.
+        It will also convert every model in :attr:`strings` to a loaded ``DalvikStringItem`` model.
         """
 
         strings = []
@@ -280,27 +319,25 @@ class DexFile:
         return strings
 
     async def load_all_strings_async(self) -> list[DalvikStringItem]:
-        """
-        Load all the dalvik string items asynchronously.
+        """Load all the dalvik string items asynchronously.
 
-        Returns: All the dalvik string items for this dex file.
+        This function invokes the ``load()`` function for all the lazy dalvik strings in the ``strings`` attribute. It
+        will also convert every model in ``strings`` to a loaded ``DalvikStringItem`` model.
         """
 
         return await asyncio.to_thread(self.load_all_strings)
 
     def get_string_by_id(self, string_id: int) -> LazyDalvikString:
-        """
+        """Get a dalvik string by its id.
+
         Get a dalvik string by its id. The difference between this, and
         `dex.strings[id]` is that this method does not require all the strings
         to be collected from the dex file. This method is useful when you only
         need a single string from the dex file and don't want to load the
         entire dex file with `parse_dex`.
 
-        Args:
-            string_id: The id of the string to get. IDs are 0-indexed, and are
-                   assigned in the order they appear in the dex file.
-
-        Returns: A `LazyDalvikString` object.
+        :param string_id: The id of the string to get. IDs are 0-indexed, and are
+            assigned in the order they appear in the dex file.
         """
 
         if self.header is None:
