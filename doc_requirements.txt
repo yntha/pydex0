@@ -2,3 +2,4 @@ sphinx
 sphinx-new-tab-link
 shibuya
 myst-parser
+pydatastreams
