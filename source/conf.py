@@ -35,13 +35,7 @@ myst_enable_extensions = [
     "html_admonition",
 ]
 
-ogp_site_url = "https://pydex.readthedocs.io/en/latest/"
-ogp_image = "/_static/og_logo.png"
-
-ogp_social_cards = {
-    "site_url": "pydex.readthedocs.io",
-    "image": "/_static/og_logo.png",
-}
+ogp_image = "https://raw.githubusercontent.com/yntha/pydex0/master/source/_static/og_logo.png"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
