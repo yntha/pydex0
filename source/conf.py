@@ -36,11 +36,11 @@ myst_enable_extensions = [
 ]
 
 ogp_site_url = "https://pydex.readthedocs.io/en/latest/"
-ogp_image = "_static/og_logo.png"
+ogp_image = "/_static/og_logo.png"
 
 ogp_social_cards = {
     "site_url": "pydex.readthedocs.io",
-    "image": "_static/og_logo.png",
+    "image": "/_static/og_logo.png",
 }
 
 # -- Options for HTML output -------------------------------------------------
