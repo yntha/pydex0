@@ -18,7 +18,8 @@ class Container:
     """
 
     def __init__(self, path: str):
-        self.path = pathlib.Path(path)
+        #: The path to the container file.
+        self.path: pathlib.Path = pathlib.Path(path)
 
 
 class InMemoryContainer:
@@ -28,7 +29,8 @@ class InMemoryContainer:
     """
 
     def __init__(self, data: bytes):
-        self.data = data
+        #: The data of the container file.
+        self.data: bytes = data
 
 
 class DexContainer(Container):
@@ -43,6 +45,9 @@ class DexContainer(Container):
     def enumerate_dex_files(self) -> Generator[str, None, None]:
         """
         Enumerate the dex files in the container file.
+
+        Returns:
+            A generator that yields the dex filepaths in the container file.
         """
 
         raise NotImplementedError()
@@ -50,6 +55,12 @@ class DexContainer(Container):
     def get_dex_data(self, dex_file: str) -> bytes:
         """
         Get the data of the dex file.
+
+        Parameters:
+            str dex_file: The filepath of the dex file in the container file.
+
+        Returns:
+            The data of the dex file within the container.
         """
 
         raise NotImplementedError()
@@ -57,6 +68,9 @@ class DexContainer(Container):
     def fetch_dex_files(self) -> DexPool:
         """
         Lazily load the dex files in the container file.
+
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
@@ -65,7 +79,8 @@ class DexContainer(Container):
         """
         Lazily load the dex files in the container file asynchronously.
 
-        Returns: A DexPool object containing the dex files.
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         return await asyncio.to_thread(self.fetch_dex_files)
@@ -83,6 +98,9 @@ class InMemoryDexContainer(InMemoryContainer):
     def enumerate_dex_files(self) -> Generator[str, None, None]:
         """
         Enumerate the dex files in the container file.
+
+        Returns:
+            A generator that yields the dex filepaths in the container file.
         """
 
         raise NotImplementedError()
@@ -90,6 +108,12 @@ class InMemoryDexContainer(InMemoryContainer):
     def get_dex_data(self, dex_file: str) -> bytes:
         """
         Get the data of the dex file.
+
+        Parameters:
+            str dex_file: The filepath of the dex file in the container file.
+
+        Returns:
+            The data of the dex file within the container.
         """
 
         raise NotImplementedError()
@@ -97,6 +121,9 @@ class InMemoryDexContainer(InMemoryContainer):
     def fetch_dex_files(self) -> DexPool:
         """
         Lazily load the dex files in the container file.
+
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         return DexPool([DexFile(self.get_dex_data(dex_file)) for dex_file in self.enumerate_dex_files()])
@@ -105,7 +132,8 @@ class InMemoryDexContainer(InMemoryContainer):
         """
         Lazily load the dex files in the container file asynchronously.
 
-        Returns: A DexPool object containing the dex files.
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         return await asyncio.to_thread(self.fetch_dex_files)
@@ -117,8 +145,8 @@ class InMemoryZipContainer(InMemoryDexContainer):
     dex files.
 
     Parameters:
-        - data: bytes: The zip file data.
-        - root_only: bool: If True, only the root files in the archive will be
+        bytes data: The zip file data.
+        bool root_only: If True, only the root files in the archive will be
             considered.
     """
 
@@ -155,8 +183,8 @@ class ZipContainer(DexContainer):
     A class that represents a zip file which contains one or more dex files.
 
     Parameters:
-        - path: str: The path to the zip file.
-        - root_only: bool: If True, only the root files in the archive will be
+        str path: The path to the zip file.
+        bool root_only: If True, only the root files in the archive will be
             considered.
     """
 
@@ -179,7 +207,7 @@ class InMemoryMultiAPKContainer(InMemoryContainer):
     more apk files.
 
     Parameters:
-        - data: bytes: The apk container file data.
+        bytes data: The apk container file data.
     """
 
     def __init__(self, data: bytes):
@@ -188,6 +216,9 @@ class InMemoryMultiAPKContainer(InMemoryContainer):
     def get_base_apk(self) -> bytes:
         """
         Get the base apk file as a bytes object.
+
+        Returns:
+            The file data of the base apk file in the container.
         """
 
         raise NotImplementedError()
@@ -197,10 +228,11 @@ class InMemoryMultiAPKContainer(InMemoryContainer):
         Lazily load the dex files in the base apk file.
 
         Parameters:
-            - root_only: bool: If True, only the root files in the archive will
+            bool root_only: If True, only the root files in the archive will
                 be considered.
 
-        Returns: A DexPool object containing the dex files.
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         zip_container = InMemoryZipContainer(self.get_base_apk(), root_only)
@@ -212,10 +244,11 @@ class InMemoryMultiAPKContainer(InMemoryContainer):
         Lazily load the dex files in the base apk file asynchronously.
 
         Parameters:
-            - root_only: bool: If True, only the root files in the archive will
+            bool root_only: If True, only the root files in the archive will
                 be considered.
 
-        Returns: A DexPool object containing the dex files.
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         return await asyncio.to_thread(self.fetch_dex_files, root_only)
@@ -227,7 +260,7 @@ class MultiAPKContainer(Container):
     files.
 
     Parameters:
-        - path: str: The path to the apk container file.
+        str path: The path to the apk container file.
     """
 
     def __init__(self, path: str):
@@ -236,6 +269,9 @@ class MultiAPKContainer(Container):
     def get_base_apk(self) -> bytes:
         """
         Get the base apk file as a bytes object.
+
+        Returns:
+            The file data of the base apk file in the container
         """
 
         raise NotImplementedError()
@@ -245,10 +281,11 @@ class MultiAPKContainer(Container):
         Lazily load the dex files in the base apk file.
 
         Parameters:
-            - root_only: bool: If True, only the root files in the archive will
+            bool root_only: If True, only the root files in the archive will
                 be considered.
 
-        Returns: A DexPool object containing the dex files.
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         zip_container = InMemoryZipContainer(self.get_base_apk(), root_only)
@@ -260,10 +297,11 @@ class MultiAPKContainer(Container):
         Lazily load the dex files in the base apk file asynchronously.
 
         Parameters:
-            - root_only: bool: If True, only the root files in the archive will
+            bool root_only: If True, only the root files in the archive will
                 be considered.
 
-        Returns: A DexPool object containing the dex files.
+        Returns:
+            A DexPool object containing the dex files.
         """
 
         return await asyncio.to_thread(self.fetch_dex_files, root_only)
@@ -272,10 +310,13 @@ class MultiAPKContainer(Container):
 class InMemoryXAPKContainer(InMemoryMultiAPKContainer):
     """
     A class that represents an in-memory xapk container file which contains one
-    or more apk files.
+    or more apk files. These conatiner files contain various apk files, whose
+    purpose is noted in the ``manifest.json`` file. This class parses the
+    ``manifest.json`` file to determine the base apk file, which is annotated by
+    the ``base`` field in the ``split_apks`` object.
 
     Parameters:
-        - data: bytes: The xapk container file data.
+        bytes data: The xapk container file data.
     """
 
     def __init__(self, data: bytes):
@@ -308,10 +349,12 @@ class XAPKContainer(MultiAPKContainer):
     """
     A class that represents a xapk file which contains one or more apk files.
     These conatiner files contain various apk files, whose purpose is noted in
-    the `manifest.json` file.
+    the ``manifest.json`` file. This class parses the ``manifest.json`` file to
+    determine the base apk file, which is annotated by the ``base`` field in the
+    ``split_apks`` object.
 
     Parameters:
-        - path: str: The path to the xapk file.
+        str path: The path to the xapk file.
     """
 
     def __init__(self, path: str):
@@ -324,10 +367,11 @@ class XAPKContainer(MultiAPKContainer):
 class InMemoryAPKSContainer(InMemoryMultiAPKContainer):
     """
     A class that represents an in-memory apks container file which contains one
-    or more apk files.
+    or more apk files. This is also known as a split-apk. The base apk in these
+    containers is usually named ``base.apk``.
 
     Parameters:
-        - data: bytes: The apks container file data.
+        bytes data: The apks container file data.
     """
 
     def __init__(self, data: bytes):
@@ -350,10 +394,11 @@ class InMemoryAPKSContainer(InMemoryMultiAPKContainer):
 class APKSContainer(MultiAPKContainer):
     """
     A class that represents an apks file which contains one or more apk files.
-    This is also known as a split-apk.
+    This is also known as a split-apk. The base apk in these containers is
+    usually named ``base.apk``.
 
     Parameters:
-        - path: str: The path to the apks file.
+        str path: The path to the apks file.
     """
 
     def __init__(self, path: str):
@@ -368,7 +413,7 @@ class JarContainer(ZipContainer):
     A class that represents a jar file which contains one or more dex files.
 
     Parameters:
-        - path: str: The path to the jar file.
+        str path: The path to the jar file.
     """
 
     def __init__(self, path: str):
@@ -381,7 +426,7 @@ class APKContainer(ZipContainer):
     Only the root files in the archive will be considered.
 
     Parameters:
-        - path: str: The path to the apk file.
+        str path: The path to the apk file.
     """
 
     def __init__(self, path: str):

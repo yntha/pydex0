@@ -1,31 +1,37 @@
-class InvalidMagicNumber(Exception):
-    """Exception raised for invalid magic number.
+class InvalidDalvikHeader(Exception):
+    """Exception raised when the parser encounters an invalid Dalvik header.
 
-    :param magic_number: The magic number that was invalid.
+    A number of codes exist as class attributes in this class which represent
+    the reason for the exception. These codes exist so that multiple exception
+    classes don't have to be created for each possible reason.
     """
 
-    def __init__(self, magic_number: bytes):
-        self.magic_number = magic_number
-        super().__init__(f"Invalid magic number: {magic_number.hex()}")
+    #: The magic bytes of the header are invalid.
+    INVALID_MAGIC_BYTES = 0
 
+    #: The checksum of the header does not match the calculated checksum.
+    INVALID_CHECKSUM = 1
 
-class InvalidChecksum(Exception):
-    """Exception raised for an invalid adler32 checksum.
+    #: The endian tag of the header representing byte order is invalid.
+    INVALID_ENDIAN_TAG = 2
 
-    :param checksum: The checksum that was invalid.
-    """
+    #: The size of the header is not ``0x70``.
+    INVALID_HEADER_SIZE = 3
 
-    def __init__(self, checksum: int):
-        self.checksum = checksum
-        super().__init__(f"Invalid checksum: {checksum}")
+    #: The ``proto_ids_size`` is greater than or equal to ``0xFFFF``.
+    INVALID_PROTOS_SIZE = 4
 
+    #: The ``type_ids_size`` is greater than or equal to ``0xFFFF``.
+    INVALID_TYPES_SIZE = 5
 
-class InvalidHeaderSize(Exception):
-    """Exception raised for an invalid header size.
+    #: The ``data_size`` is not divisible by the size of a word.
+    INVALID_DATA_SIZE = 6
 
-    :param header_size: The invalid header size.
-    """
+    def __init__(self, message: str, code: int):
+        #: The message of the exception.
+        self.message = message
 
-    def __init__(self, header_size: int):
-        self.header_size = header_size
-        super().__init__(f"Invalid header size: {header_size}")
+        #: The code of the exception.
+        self.code = code
+
+        super().__init__(self.message)

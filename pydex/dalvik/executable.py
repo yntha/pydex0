@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datastream import DeserializingStream, ByteOrder
 
 from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem, LazyDalvikString, DalvikStringID, DalvikStringItem
+from pydex.exc import InvalidDalvikHeader
 
 
 @dataclass
@@ -51,7 +52,7 @@ class DexFile:
     @classmethod
     def from_path(cls, path: str) -> DexFile:
         """
-        Create a DexFile object from a file path.
+        Create a :class:`~pydex.dalvik.DexFile` object from a file path.
 
         :param path: The path to the dex file.
         """
@@ -63,7 +64,7 @@ class DexFile:
         """
         Helper function that does misc startup tasks for parsing the dex file.
 
-        :raises ValueError: If the endian tag is invalid.
+        :raises InvalidDalvikHeader: If the endian tag is invalid.
         """
 
         # reset the stream in case it was read from before
@@ -78,7 +79,7 @@ class DexFile:
         elif endian_tag == 0x78563412:
             self.stream.byteorder = ByteOrder.LITTLE_ENDIAN
         else:
-            raise ValueError("Invalid endian tag")
+            raise InvalidDalvikHeader("Invalid endian tag", InvalidDalvikHeader.INVALID_ENDIAN_TAG)
 
         # parse the header
         self.header = self.parse_header()
@@ -104,13 +105,7 @@ class DexFile:
         Parse the header of the dex file.
 
         Raises:
-            ValueError:
-                - If the first 4 bytes don't match ``dex\x0A``.
-                - If the checksum is invalid.
-                - If the header size is not ``0x70``.
-                - If the type ids size is greater than or equal to ``0xFFFF``.
-                - If the proto ids size is greater than or equal to ``0xFFFF``.
-                - If the data size is not divisible by the size of an unsigned integer.
+            InvalidDalvikHeader: If the parser encounters unexpected values in the header.
         """
 
         clonestream = self.stream.clone()
@@ -121,10 +116,10 @@ class DexFile:
         # the magic bytes are not constant, as they contain a version number
         # dex\0x0Axxx\x00, where xxx is the version number(zero padded).
         if magic[:4] != b"dex\x0A":
-            raise ValueError("Invalid magic bytes")
+            raise InvalidDalvikHeader("Invalid magic bytes", InvalidDalvikHeader.INVALID_MAGIC_BYTES)
 
         if magic[7] != 0:
-            raise ValueError("Invalid magic bytes")
+            raise InvalidDalvikHeader("No terminating NULL character", InvalidDalvikHeader.INVALID_MAGIC_BYTES)
 
         # get the checksum
         checksum = clonestream.read_uint32()
@@ -133,7 +128,7 @@ class DexFile:
         # the magic bytes and this field, so 8 bytes + 4 bytes = 12 bytes to
         # skip.
         if checksum != zlib.adler32(self.data[12:]):
-            raise ValueError(f"Invalid checksum: {checksum}")
+            raise InvalidDalvikHeader(f"Invalid checksum: {checksum}", InvalidDalvikHeader.INVALID_CHECKSUM)
 
         # get the sha-1 signature bytes(fingerprint)
         signature = clonestream.read(20)
@@ -146,7 +141,7 @@ class DexFile:
 
         # according to the spec, this should always be == 0x70
         if header_size != 0x70:
-            raise ValueError(f"Invalid header size: {header_size}")
+            raise InvalidDalvikHeader(f"Invalid header size: {header_size}", InvalidDalvikHeader.INVALID_HEADER_SIZE)
 
         # get the endian tag
         endian_tag = clonestream.read_uint32()
@@ -171,7 +166,7 @@ class DexFile:
 
         # according to the spec, this should always be <= 0xFFFF
         if type_ids_size >= 0xFFFF:
-            raise ValueError(f"Invalid type ids size: {type_ids_size}")
+            raise InvalidDalvikHeader(f"Invalid type ids size: {type_ids_size}", InvalidDalvikHeader.INVALID_TYPES_SIZE)
 
         # get the type ids offset
         type_ids_off = clonestream.read_uint32()
@@ -181,7 +176,9 @@ class DexFile:
 
         # according to the spec, this should always be <= 0xFFFF
         if proto_ids_size >= 0xFFFF:
-            raise ValueError(f"Invalid proto ids size: {proto_ids_size}")
+            raise InvalidDalvikHeader(
+                f"Invalid proto ids size: {proto_ids_size}", InvalidDalvikHeader.INVALID_PROTOS_SIZE
+            )
 
         # get the proto ids offset
         proto_ids_off = clonestream.read_uint32()
@@ -209,7 +206,7 @@ class DexFile:
 
         # this field should be divisible by sizeof(uint)
         if data_size % struct.calcsize("I") != 0:
-            raise ValueError(f"Invalid data size: {data_size}")
+            raise InvalidDalvikHeader(f"Invalid data size: {data_size}", InvalidDalvikHeader.INVALID_DATA_SIZE)
 
         # get the data offset
         data_off = clonestream.read_uint32()
@@ -250,13 +247,7 @@ class DexFile:
         Parse the header of the dex file.
 
         Raises:
-            ValueError:
-                - If the first 4 bytes don't match ``dex\x0A``.
-                - If the checksum is invalid.
-                - If the header size is not ``0x70``.
-                - If the type ids size is greater than or equal to ``0xFFFF``.
-                - If the proto ids size is greater than or equal to ``0xFFFF``.
-                - If the data size is not divisible by the size of an unsigned integer.
+            InvalidDalvikHeader: If the parser encounters unexpected values in the header.
         """
 
         return await asyncio.to_thread(self.parse_header)
@@ -265,7 +256,8 @@ class DexFile:
         """Collect all the dalvik string items.
 
         This function collects all the dalvik string items in this DEX file and returns them as a list of
-        ``LazyDalvikString``. A clone stream is used so to not alter the DEX file stream.
+        :class:`~pydex.dalvik.models.LazyDalvikString`. A clone stream is used so to not alter the DEX
+        file stream.
         """
 
         if self.header is None:
@@ -299,16 +291,18 @@ class DexFile:
         """Collect all the dalvik string items.
 
         This function collects all the dalvik string items in this DEX file and returns them as a list of
-        ``LazyDalvikString``. A clone stream is used so to not alter the DEX file stream.
+        :class:`~pydex.dalvik.models.LazyDalvikString`. A clone stream is used so to not alter the
+        DEX file stream.
         """
 
         return await asyncio.to_thread(self.parse_strings)
 
     def load_all_strings(self) -> list[DalvikStringItem]:
-        """Load all the dalvik string items asynchronously.
+        """Load all the dalvik string items.
 
-        This function invokes the ``load()`` function for all the lazy dalvik strings in the :attr:`strings` attribute.
-        It will also convert every model in :attr:`strings` to a loaded ``DalvikStringItem`` model.
+        This function invokes the :meth:`~pydex.dalvik.models.LazyDalvikString.load` function for
+        all the lazy dalvik strings in the :attr:`strings` attribute. It will also convert every
+        model in :attr:`strings` to a loaded :class:`~pydex.dalvik.models.DalvikStringItem` model.
         """
 
         strings = []
@@ -321,8 +315,10 @@ class DexFile:
     async def load_all_strings_async(self) -> list[DalvikStringItem]:
         """Load all the dalvik string items asynchronously.
 
-        This function invokes the ``load()`` function for all the lazy dalvik strings in the ``strings`` attribute. It
-        will also convert every model in ``strings`` to a loaded ``DalvikStringItem`` model.
+        This function invokes the :meth:`~pydex.dalvik.models.LazyDalvikString.load_async`
+        function for all the lazy dalvik strings in the :attr:`strings` attribute. It will
+        also convert every model in :attr:`strings` to a loaded
+        :class:`~pydex.dalvik.models.DalvikStringItem` model.
         """
 
         return await asyncio.to_thread(self.load_all_strings)
@@ -331,10 +327,10 @@ class DexFile:
         """Get a dalvik string by its id.
 
         Get a dalvik string by its id. The difference between this, and
-        `dex.strings[id]` is that this method does not require all the strings
+        ``dex.strings[id]`` is that this method does not require all the strings
         to be collected from the dex file. This method is useful when you only
         need a single string from the dex file and don't want to load the
-        entire dex file with `parse_dex`.
+        entire dex file with :func:`parse_dex`.
 
         :param string_id: The id of the string to get. IDs are 0-indexed, and are
             assigned in the order they appear in the dex file.
