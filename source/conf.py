@@ -45,7 +45,7 @@ html_static_path = ['_static']
 html_theme_options = {
     'github_url': "https://github.com/yntha/pydex0",
     "discussion_url": "https://github.com/yntha/pydex0/discussions",
-    "og_image_url": "_static/og_logo.png",
+    "og_image_url": "https://raw.githubusercontent.com/yntha/pydex0/master/source/_static/og_logo.png",
     "accent_color": "grass",
     "dark_code": True,
 }
