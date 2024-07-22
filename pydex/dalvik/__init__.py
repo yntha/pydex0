@@ -1,1 +1,1 @@
-from pydex.dalvik.executable import DexFile
+from pydex.dalvik.executable import DexFile, DexPool

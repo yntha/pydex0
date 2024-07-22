@@ -3,6 +3,7 @@ import os
 
 from datastream import ByteOrder
 from pydex.dalvik import DexFile
+from pydex.exc import InvalidDalvikHeader
 
 
 def get_test_dex() -> bytes:
@@ -32,60 +33,76 @@ def test_header_invalid_magic():
     dex_data = get_modified_dex(0, b"abcd\x0A")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_MAGIC_BYTES
 
     # check null byte
     dex_data = get_modified_dex(7, b"\x01")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_MAGIC_BYTES
 
 
 def test_header_invalid_checksum():
     dex_data = get_modified_dex(8, b"\x00\x00\x00\x00")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_CHECKSUM
 
 
 def test_header_invalid_header_size():
     dex_data = get_modified_dex(36, b"\x00\x00\x00\x00")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_HEADER_SIZE
 
 
 def test_header_invalid_endian_tag():
     dex_data = get_modified_dex(40, b"\x00\x00\x00\x00")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_ENDIAN_TAG
 
 
 def test_header_invalid_type_ids_size():
     dex_data = get_modified_dex(64, b"\xFF\xFF\xFF\xFF")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_TYPES_SIZE
 
 
 def test_header_invalid_proto_ids_size():
     dex_data = get_modified_dex(72, b"\xFF\xFF\xFF\xFF")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_PROTOS_SIZE
 
 
 def test_header_invalid_data_size():
     dex_data = get_modified_dex(94, b"\x05\x00\x00\x00")
     dex = DexFile(dex_data)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidDalvikHeader) as exc_info:
         dex.parse_dex()
+
+        assert exc_info.value.code == InvalidDalvikHeader.INVALID_DATA_SIZE
