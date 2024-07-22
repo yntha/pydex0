@@ -18,7 +18,7 @@ author = 'yntha'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', "sphinx_new_tab_link", "myst_parser"]
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon', "sphinx_new_tab_link", "myst_parser", "sphinxext.opengraph"]
 templates_path = ['_templates']
 exclude_patterns = []
 
@@ -34,6 +34,11 @@ myst_enable_extensions = [
     "colon_fence",
     "html_admonition",
 ]
+
+ogp_site_url = "https://pydex.readthedocs.io/en/latest/"
+ogp_social_cards = {
+    "site_url": "pydex.readthedocs.io",
+}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
