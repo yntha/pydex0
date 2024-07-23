@@ -472,7 +472,7 @@ class DalvikTypeListItem:
         Create a DalvikTypeListItem from a DalvikTypeList
 
         Args:
-            DalvikTypeList raw_item: The DalvikTypeList that will contain the data of this item.
+            DalvikTypeList raw_item: The :class:`~pydex.dalvik.models.DalvikTypeList` that will contain the data of this item.
             list[DalvikTypeItem] types: The complete list of types in the dex file.
         """
 
