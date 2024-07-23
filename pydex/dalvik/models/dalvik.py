@@ -422,13 +422,13 @@ class DalvikProto(DalvikRawItem):
         `dex_format::proto_id_item <https://source.android.com/docs/core/runtime/dex-format#proto-id-item>`_
     """
 
-    #: Index into the string_ids list for the short-form descriptor string of this prototype.
+    #: Index into the ``string_ids list`` for the short-form descriptor string of this prototype.
     shorty_idx: int  # 4 bytes
 
-    #: Index into the type_ids list for the return type of this prototype.
+    #: Index into the ``type_ids`` list for the return type of this prototype.
     return_type_idx: int  # 4 bytes
 
-    #: offset from the start of the file to the list of parameter types for this prototype, or 0 if this prototype has
+    #: Offset from the start of the file to the list of parameter types for this prototype, or 0 if this prototype has
     #: no parameters.
     parameters_off: int  # 4 bytes
 
@@ -511,7 +511,7 @@ class DalvikProtoItem:
         Create a DalvikProtoItem from a DalvikProto
 
         Args:
-            DalvikProto raw_item: The DalvikProto that will contain the data of this item.
+            DalvikProto raw_item: The :class:`~pydex.dalvik.models.DalvikProto` that will contain the data of this item.
             DalvikStringItem | LazyDalvikString shorty: The shorty string item.
             DalvikTypeItem return_type: The return type item.
             DalvikTypeListItem parameters: The list of parameter type items.
