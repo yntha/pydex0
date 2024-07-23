@@ -198,7 +198,7 @@ the low-level classes.
     :members:
     :show-inheritance:
 
----
+----
 
 .. autoclass:: DalvikTypeItem
     :members:
