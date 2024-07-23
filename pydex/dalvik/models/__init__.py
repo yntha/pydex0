@@ -9,7 +9,7 @@ from pydex.dalvik.models.dalvik import (
     DalvikTypeID,
     DalvikTypeItem,
     DalvikTypeList,
-    DalvikProto,
-    DalvikProtoItem,
+    DalvikProtoID,
+    DalvikProtoIDItem,
     DalvikTypeListItem,
 )

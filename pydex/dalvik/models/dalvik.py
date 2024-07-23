@@ -412,7 +412,7 @@ class DalvikTypeItem:
 
 
 @dataclass
-class DalvikProto(DalvikRawItem):
+class DalvikProtoID(DalvikRawItem):
     """
     A dataclass that represents a prototype found in a dex file.
 
@@ -482,13 +482,13 @@ class DalvikTypeListItem:
 
 
 @dataclass
-class DalvikProtoItem:
+class DalvikProtoIDItem:
     """
     A dataclass that represents a high-level prototype item in a dex file.
     """
 
     #: The raw prototype id item.
-    raw_item: DalvikProto
+    raw_item: DalvikProtoID
 
     #: The shorty string item.
     shorty: DalvikStringItem | LazyDalvikString
@@ -502,16 +502,16 @@ class DalvikProtoItem:
     @classmethod
     def from_raw_item(
         cls,
-        raw_item: DalvikProto,
+        raw_item: DalvikProtoID,
         shorty: DalvikStringItem | LazyDalvikString,
         return_type: DalvikTypeItem,
         parameters: DalvikTypeListItem,
-    ) -> DalvikProtoItem:
+    ) -> DalvikProtoIDItem:
         """
-        Create a DalvikProtoItem from a DalvikProto
+        Create a DalvikProtoIDItem from a DalvikProtoID
 
         Args:
-            DalvikProto raw_item: The :class:`~pydex.dalvik.models.DalvikProto` that will contain the data of this item.
+            DalvikProto raw_item: The :class:`~pydex.dalvik.models.DalvikProtoID` that will contain the data of this item.
             DalvikStringItem | LazyDalvikString shorty: The shorty string item.
             DalvikTypeItem return_type: The return type item.
             DalvikTypeListItem parameters: The list of parameter type items.
