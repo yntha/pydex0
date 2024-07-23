@@ -191,3 +191,14 @@ the low-level classes.
 
 .. autoclass:: LazyDalvikString
     :members:
+
+----
+
+.. autoclass:: DalvikTypeID
+    :members:
+    :show-inheritance:
+
+---
+
+.. autoclass:: DalvikTypeItem
+    :members:
