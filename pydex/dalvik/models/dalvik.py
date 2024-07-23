@@ -409,3 +409,117 @@ class DalvikTypeItem:
 
     def __str__(self) -> str:
         return self.descriptor.value
+
+
+@dataclass
+class DalvikProto(DalvikRawItem):
+    """
+    A dataclass that represents a prototype found in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::proto_id_item <https://source.android.com/docs/core/runtime/dex-format#proto-id-item>`_
+    """
+
+    #: Index into the string_ids list for the short-form descriptor string of this prototype.
+    shorty_idx: int  # 4 bytes
+
+    #: Index into the type_ids list for the return type of this prototype.
+    return_type_idx: int  # 4 bytes
+
+    #: offset from the start of the file to the list of parameter types for this prototype, or 0 if this prototype has
+    #: no parameters.
+    parameters_off: int  # 4 bytes
+
+    #: The index number of this prototype. This field is not part of the dex file format.
+    id_number: int
+
+
+@dataclass
+class DalvikTypeList(DalvikRawItem):
+    """
+    A dataclass that represents a list of types found in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::type_list <https://source.android.com/docs/core/runtime/dex-format#type-list>`_
+    """
+
+    #: Size of the list, in entries.
+    size: int  # 4 bytes
+
+    #: Elements of the list.
+    list: list[DalvikTypeID]
+
+
+@dataclass
+class DalvikTypeListItem:
+    """
+    A dataclass that represents a high-level type list item in a dex file.
+    """
+
+    #: The raw type list item.
+    raw_item: DalvikTypeList
+
+    #: The list of type items.
+    types: list[DalvikTypeItem]
+
+    @classmethod
+    def from_raw_item(cls, raw_item: DalvikTypeList, types: list[DalvikTypeItem]) -> DalvikTypeListItem:
+        """
+        Create a DalvikTypeListItem from a DalvikTypeList
+
+        Args:
+            DalvikTypeList raw_item: The DalvikTypeList that will contain the data of this item.
+            list[DalvikTypeItem] types: The complete list of types in the dex file.
+        """
+
+        referenced_types = [types[type_id.id_number] for type_id in raw_item.list]
+
+        return cls(raw_item, referenced_types)
+
+
+@dataclass
+class DalvikProtoItem:
+    """
+    A dataclass that represents a high-level prototype item in a dex file.
+    """
+
+    #: The raw prototype id item.
+    raw_item: DalvikProto
+
+    #: The shorty string item.
+    shorty: DalvikStringItem | LazyDalvikString
+
+    #: The return type of the prototype.
+    return_type: DalvikTypeItem
+
+    #: The list of parameter types for this prototype.
+    parameters: DalvikTypeListItem
+
+    @classmethod
+    def from_raw_item(
+        cls,
+        raw_item: DalvikProto,
+        shorty: DalvikStringItem | LazyDalvikString,
+        return_type: DalvikTypeItem,
+        parameters: DalvikTypeListItem,
+    ) -> DalvikProtoItem:
+        """
+        Create a DalvikProtoItem from a DalvikProto
+
+        Args:
+            DalvikProto raw_item: The DalvikProto that will contain the data of this item.
+            DalvikStringItem | LazyDalvikString shorty: The shorty string item.
+            DalvikTypeItem return_type: The return type item.
+            DalvikTypeListItem parameters: The list of parameter type items.
+        """
+
+        return cls(raw_item, shorty, return_type, parameters)
+
+    def __str__(self) -> str:
+        param_list = ", ".join(str(param) for param in self.parameters.types)
+
+        return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value} "
