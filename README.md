@@ -5,7 +5,7 @@
 # PyDex
 Powerful, yet easy to use, python library for loading(and eventually writing) dex files.
 
-![PyPI - Version](https://img.shields.io/pypi/v/pydex0)
+[![PyPI - Version](https://img.shields.io/pypi/v/pydex0)](https://pypi.org/project/pydex0/)
 [![Python application](https://github.com/yntha/pydex0/actions/workflows/run-tests.yml/badge.svg)](https://github.com/yntha/pydex0/actions/workflows/run-tests.yml)
 [![Documentation Status](https://readthedocs.org/projects/pydex/badge/?version=latest)](https://pydex.readthedocs.io/en/latest/?badge=latest)
 
