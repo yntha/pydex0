@@ -202,3 +202,25 @@ the low-level classes.
 
 .. autoclass:: DalvikTypeItem
     :members:
+
+----
+
+.. autoclass:: DalvikProtoID
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikProtoIDItem
+    :members:
+
+----
+
+.. autoclass:: DalvikTypeList
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikTypeListItem
+    :members:
