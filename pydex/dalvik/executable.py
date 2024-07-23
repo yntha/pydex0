@@ -34,6 +34,7 @@ class DexFile:
     the file both synchronously and asynchronously.
 
     :param data: The raw bytes of the dex file.
+    :param no_lazy_load: A flag that indicates whether lazy loading should be disabled.
     """
 
     def __init__(self, data: bytes, no_lazy_load: bool = False):
@@ -53,15 +54,16 @@ class DexFile:
         self.strings: list[LazyDalvikString | DalvikStringItem] = []
 
     @classmethod
-    def from_path(cls, path: str) -> DexFile:
+    def from_path(cls, path: str, no_lazy_load: bool = False) -> DexFile:
         """
         Create a :class:`~pydex.dalvik.DexFile` object from a file path.
 
         :param path: The path to the dex file.
+        :param no_lazy_load: A flag that indicates whether lazy loading should be disabled.
         """
 
         with open(path, "rb") as f:
-            return cls(f.read())
+            return cls(f.read(), no_lazy_load=no_lazy_load)
 
     def parse_dex_prologue(self) -> typing.Self:
         """
