@@ -447,11 +447,11 @@ class DalvikTypeList(DalvikRawItem):
         `dex_format::type_list <https://source.android.com/docs/core/runtime/dex-format#type-list>`_
     """
 
-    #: Size of the list, in entries.
-    size: int  # 4 bytes
+    #: Size of the list, in entries. Renamed from ``size`` to avoid shadowing.
+    length: int  # 4 bytes
 
-    #: Elements of the list.
-    list: list[DalvikTypeID]
+    #: Elements of the list. Renamed from ``list`` to avoid shadowing.
+    entries: list[DalvikTypeID]
 
 
 @dataclass
