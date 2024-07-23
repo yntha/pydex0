@@ -32,7 +32,7 @@ docs = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/yntha/pydex0#readme"
+Documentation = "https://pydex.readthedocs.io/en/latest/"
 Issues = "https://github.com/yntha/pydex0/issues"
 Source = "https://github.com/yntha/pydex0"
 
