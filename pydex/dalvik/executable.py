@@ -36,9 +36,12 @@ class DexFile:
     :param data: The raw bytes of the dex file.
     """
 
-    def __init__(self, data: bytes):
+    def __init__(self, data: bytes, no_lazy_load: bool = False):
         #: The raw bytes of the dex file.
         self.data: bytes = data
+
+        #: A flag that indicates whether lazy loading should be disabled.
+        self.no_lazy_load: bool = no_lazy_load
 
         #: The stream used to read the dex file.
         self.stream: DeserializingStream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
@@ -47,7 +50,7 @@ class DexFile:
         self.header: DalvikHeaderItem = typing.cast(DalvikHeaderItem, None)
 
         #: The list of dalvik string items in the dex file.
-        self.strings: list[LazyDalvikString] = []
+        self.strings: list[LazyDalvikString | DalvikStringItem] = []
 
     @classmethod
     def from_path(cls, path: str) -> DexFile:
@@ -95,8 +98,11 @@ class DexFile:
 
         self.parse_dex_prologue()
 
-        # collect all the dalvik string items as LazyDalvikStrings
-        self.strings = self.parse_strings()
+        # collect all the dalvik string items
+        if not self.no_lazy_load:
+            self.strings = self.parse_strings()
+        else:
+            self.strings = self.load_all_strings()
 
         return self
 
@@ -304,6 +310,14 @@ class DexFile:
         all the lazy dalvik strings in the :attr:`strings` attribute. It will also convert every
         model in :attr:`strings` to a loaded :class:`~pydex.dalvik.models.DalvikStringItem` model.
         """
+
+        if not self.strings:
+            self.strings = self.parse_strings()
+
+        # if there are still no strings, then we can't load them.
+        # return immediately.
+        if not self.strings:
+            return []
 
         strings = []
 
