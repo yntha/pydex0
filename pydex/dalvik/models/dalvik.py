@@ -395,13 +395,15 @@ class DalvikTypeItem:
 
     @classmethod
     def from_raw_item(
-        cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString]
+        cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString], id_number: int
     ) -> DalvikTypeItem:
         """
         Create a DalvikTypeItem from a DalvikTypeID
 
         Args:
             DalvikTypeID raw_item: The DalvikTypeID that will contain the data of this item.
+            list[DalvikStringItem | LazyDalvikString] strings: The list of string items.
+            int id_number: The index number of this type
         """
 
-        return cls(raw_item, strings[raw_item.descriptor_idx])
+        return cls(raw_item, strings[raw_item.descriptor_idx], id_number)
