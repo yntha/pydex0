@@ -1,5 +1,5 @@
 <div align="center" style="margin: 25px;">
-<img height="100px" src="source/_static/logo.png"/>
+<img height="100px" src="https://raw.githubusercontent.com/yntha/pydex0/master/source/_static/logo.png"/>
 </div>
 
 # PyDex
@@ -24,5 +24,5 @@ Unfortunately, PyDex is named *pydex0* on PyPI because the name *pydex* was alre
 ---
 
 <div align="center">
-<img height="100px" src="source/_static/firedroid.png"/>
+<img height="100px" src="https://raw.githubusercontent.com/yntha/pydex0/master/source/_static/firedroid.png"/>
 </div>
