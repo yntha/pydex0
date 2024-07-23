@@ -9,7 +9,15 @@ from dataclasses import dataclass
 
 from datastream import DeserializingStream, ByteOrder
 
-from pydex.dalvik.models import DalvikHeader, DalvikHeaderItem, LazyDalvikString, DalvikStringID, DalvikStringItem
+from pydex.dalvik.models import (
+    DalvikHeader,
+    DalvikHeaderItem,
+    LazyDalvikString,
+    DalvikStringID,
+    DalvikStringItem,
+    DalvikTypeItem,
+    DalvikTypeID,
+)
 from pydex.exc import InvalidDalvikHeader
 
 
@@ -52,6 +60,9 @@ class DexFile:
 
         #: The list of dalvik string items in the dex file.
         self.strings: list[LazyDalvikString | DalvikStringItem] = []
+
+        #: The list of dalvik type items in the dex file.
+        self.types: list[DalvikTypeItem] = []
 
     @classmethod
     def from_path(cls, path: str, no_lazy_load: bool = False) -> DexFile:
@@ -105,6 +116,9 @@ class DexFile:
             self.strings = self.parse_strings()
         else:
             self.strings = self.load_all_strings()
+
+        # collect all the dalvik type items
+        self.types = self.parse_types()
 
         return self
 
@@ -304,6 +318,60 @@ class DexFile:
         """
 
         return await asyncio.to_thread(self.parse_strings)
+
+    def parse_types(self) -> list[DalvikTypeItem]:
+        """Collect all the dalvik type items.
+
+        This function collects all the dalvik type items in this DEX file and returns them as a list of
+        :class:`~pydex.dalvik.models.DalvikTypeItem`. A clone stream is used so to not alter the DEX
+        file stream.
+        """
+
+        if self.header is None:
+            self.parse_dex_prologue()
+
+        if not self.strings:
+            self.strings = self.parse_strings()
+
+        # if there are still no strings, then we can't parse the types.
+        # return immediately.
+        if not self.strings:
+            return []
+
+        types = []
+        clonestream = self.stream.clone()
+
+        for i in range(self.header.raw_item.type_ids_size):
+            clonestream.seek(self.header.raw_item.type_ids_off + i * 4)
+            type_id_off = clonestream.tell()
+
+            descriptor_idx = clonestream.read_uint32()
+            descriptor = self.strings[descriptor_idx]
+
+            types.append(
+                DalvikTypeItem(
+                    DalvikTypeID(
+                        offset=type_id_off,
+                        size=4,
+                        data=self.data[type_id_off : type_id_off + 4],
+                        descriptor_idx=descriptor_idx,
+                    ),
+                    descriptor=descriptor,
+                    id_number=i,
+                )
+            )
+
+        return types
+
+    async def parse_types_async(self) -> list[DalvikTypeItem]:
+        """Collect all the dalvik type items asynchronously.
+
+        This function collects all the dalvik type items in this DEX file and returns them as a list of
+        :class:`~pydex.dalvik.models.DalvikTypeItem`. A clone stream is used so to not alter the DEX
+        file stream.
+        """
+
+        return await asyncio.to_thread(self.parse_types)
 
     def load_all_strings(self) -> list[DalvikStringItem]:
         """Load all the dalvik string items.

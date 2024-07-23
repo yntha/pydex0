@@ -6,4 +6,6 @@ from pydex.dalvik.models.dalvik import (
     DalvikStringData,
     DalvikStringID,
     LazyDalvikString,
+    DalvikTypeID,
+    DalvikTypeItem,
 )

@@ -361,3 +361,47 @@ class LazyDalvikString:
         """
 
         return await asyncio.to_thread(self.load, stream)
+
+
+@dataclass
+class DalvikTypeID(DalvikRawItem):
+    """
+    A dataclass that represents the raw type id of a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::type_id_item <https://source.android.com/docs/core/runtime/dex-format#type-id-item>`_
+    """
+
+    #: Index into the ``string_ids`` list for the descriptor string of this type.
+    descriptor_idx: int  # 4 bytes
+
+
+@dataclass
+class DalvikTypeItem:
+    """
+    A dataclass that represents a high-level type item in a dex file.
+    """
+
+    #: The raw type id item.
+    raw_item: DalvikTypeID
+
+    #: The raw string item.
+    descriptor: DalvikStringItem | LazyDalvikString
+
+    #: The index number of this type
+    id_number: int
+
+    @classmethod
+    def from_raw_item(
+        cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString]
+    ) -> DalvikTypeItem:
+        """
+        Create a DalvikTypeItem from a DalvikTypeID
+
+        Args:
+            DalvikTypeID raw_item: The DalvikTypeID that will contain the data of this item.
+        """
+
+        return cls(raw_item, strings[raw_item.descriptor_idx])
