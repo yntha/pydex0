@@ -8,4 +8,8 @@ from pydex.dalvik.models.dalvik import (
     LazyDalvikString,
     DalvikTypeID,
     DalvikTypeItem,
+    DalvikTypeList,
+    DalvikProto,
+    DalvikProtoItem,
+    DalvikTypeListItem,
 )
