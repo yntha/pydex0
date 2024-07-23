@@ -355,9 +355,9 @@ class DexFile:
                         size=4,
                         data=self.data[type_id_off : type_id_off + 4],
                         descriptor_idx=descriptor_idx,
+                        id_number=i,
                     ),
                     descriptor=descriptor,
-                    id_number=i,
                 )
             )
 

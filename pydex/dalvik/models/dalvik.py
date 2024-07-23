@@ -377,6 +377,9 @@ class DalvikTypeID(DalvikRawItem):
     #: Index into the ``string_ids`` list for the descriptor string of this type.
     descriptor_idx: int  # 4 bytes
 
+    #: The index number of this type. This field is not part of the dex file format.
+    id_number: int
+
 
 @dataclass
 class DalvikTypeItem:
@@ -390,12 +393,9 @@ class DalvikTypeItem:
     #: The raw string item.
     descriptor: DalvikStringItem | LazyDalvikString
 
-    #: The index number of this type
-    id_number: int
-
     @classmethod
     def from_raw_item(
-        cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString], id_number: int
+        cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString]
     ) -> DalvikTypeItem:
         """
         Create a DalvikTypeItem from a DalvikTypeID
@@ -403,10 +403,9 @@ class DalvikTypeItem:
         Args:
             DalvikTypeID raw_item: The DalvikTypeID that will contain the data of this item.
             list[DalvikStringItem | LazyDalvikString] strings: The list of string items.
-            int id_number: The index number of this type
         """
 
-        return cls(raw_item, strings[raw_item.descriptor_idx], id_number)
+        return cls(raw_item, strings[raw_item.descriptor_idx])
 
     def __str__(self) -> str:
         return self.descriptor.value
