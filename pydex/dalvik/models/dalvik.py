@@ -407,3 +407,6 @@ class DalvikTypeItem:
         """
 
         return cls(raw_item, strings[raw_item.descriptor_idx], id_number)
+
+    def __str__(self) -> str:
+        return self.descriptor.value
