@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 from datastream import ByteOrder, DeserializingStream
 
@@ -36,6 +37,8 @@ class DalvikHeader(DalvikRawItem):
 
         `dex_format::header_item <https://source.android.com/docs/core/runtime/dex-format#header-item>`_
     """
+
+    struct_size: ClassVar[int] = 0x70
 
     #: Magic value.
     magic: bytes  # 8 bytes
@@ -171,6 +174,8 @@ class DalvikStringID(DalvikRawItem):
         `dex_format::string_id_item <https://source.android.com/docs/core/runtime/dex-format#string-item>`_
     """
 
+    struct_size: ClassVar[int] = 0x04
+
     #: Offset from the start of the file to the string data.
     string_data_off: int  # 4 bytes
 
@@ -189,6 +194,8 @@ class DalvikStringData(DalvikRawItem):
 
         `dex_format::string_data_item <https://source.android.com/docs/core/runtime/dex-format#string-data-item>`_
     """
+
+    struct_size: ClassVar[int] = 0x00
 
     #: Size of the string in UTF-16 code units.
     utf16_size: int  # uleb128
@@ -374,6 +381,8 @@ class DalvikTypeID(DalvikRawItem):
         `dex_format::type_id_item <https://source.android.com/docs/core/runtime/dex-format#type-id-item>`_
     """
 
+    struct_size: ClassVar[int] = 0x04
+
     #: Index into the ``string_ids`` list for the descriptor string of this type.
     descriptor_idx: int  # 4 bytes
 
@@ -422,6 +431,8 @@ class DalvikProtoID(DalvikRawItem):
         `dex_format::proto_id_item <https://source.android.com/docs/core/runtime/dex-format#proto-id-item>`_
     """
 
+    struct_size: ClassVar[int] = 0x0C
+
     #: Index into the ``string_ids list`` for the short-form descriptor string of this prototype.
     shorty_idx: int  # 4 bytes
 
@@ -446,6 +457,8 @@ class DalvikTypeList(DalvikRawItem):
 
         `dex_format::type_list <https://source.android.com/docs/core/runtime/dex-format#type-list>`_
     """
+
+    struct_size: ClassVar[int] = 0x00
 
     #: Size of the list, in entries. Renamed from ``size`` to avoid shadowing.
     length: int  # 4 bytes
@@ -472,11 +485,12 @@ class DalvikTypeListItem:
         Create a DalvikTypeListItem from a DalvikTypeList
 
         Args:
-            DalvikTypeList raw_item: The :class:`~pydex.dalvik.models.DalvikTypeList` that will contain the data of this item.
+            DalvikTypeList raw_item: The :class:`~pydex.dalvik.models.DalvikTypeList` that will contain the data of
+                this item.
             list[DalvikTypeItem] types: The complete list of types in the dex file.
         """
 
-        referenced_types = [types[type_id.id_number] for type_id in raw_item.list]
+        referenced_types = [types[type_id.id_number] for type_id in raw_item.entries]
 
         return cls(raw_item, referenced_types)
 
