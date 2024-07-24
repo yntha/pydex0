@@ -156,6 +156,10 @@ the low-level classes.
 
 .. currentmodule:: pydex.dalvik.models
 
+.. autofunction:: dump_model_json
+
+----
+
 .. autoclass:: DalvikRawItem
     :members:
 
@@ -201,4 +205,26 @@ the low-level classes.
 ----
 
 .. autoclass:: DalvikTypeItem
+    :members:
+
+----
+
+.. autoclass:: DalvikProtoID
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikProtoIDItem
+    :members:
+
+----
+
+.. autoclass:: DalvikTypeList
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikTypeListItem
     :members:
