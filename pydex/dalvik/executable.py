@@ -469,6 +469,16 @@ class DexFile:
 
         return protos
 
+    async def parse_protos_async(self) -> list[DalvikProtoIDItem]:
+        """Collect all the dalvik proto items asynchronously.
+
+        This function collects all the dalvik prototyoe items in this DEX file and returns them as a
+        list of :class:`~pydex.dalvik.models.DalvikProtoIDItem`. A clone stream is used so to not
+        alter the DEX file stream.
+        """
+
+        return await asyncio.to_thread(self.parse_protos)
+
     def load_all_strings(self) -> list[DalvikStringItem]:
         """Load all the dalvik string items.
 
