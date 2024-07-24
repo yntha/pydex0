@@ -1,0 +1,331 @@
+                           |
+                           |-----------------------------
+                           |header_item section
+                           |-----------------------------
+                           |
+                           |[0] header_item
+000000: 6465 780a 3033 3500|  magic: dex\n035\u0000
+000008: ab4b d3bf          |  checksum
+00000c: 5372 d33b 1e34 527e|  signature
+000014: 985e 0fc1 35d2 874c|
+00001c: bc16 a4b4          |
+000020: 8002 0000          |  file_size: 640
+000024: 7000 0000          |  header_size: 112
+000028: 7856 3412          |  endian_tag: 0x12345678 (Little Endian)
+00002c: 0000 0000          |  link_size: 0
+000030: 0000 0000          |  link_offset: 0x0
+000034: e001 0000          |  map_off: 0x1e0
+000038: 0c00 0000          |  string_ids_size: 12
+00003c: 7000 0000          |  string_ids_off: 0x70
+000040: 0500 0000          |  type_ids_size: 5
+000044: a000 0000          |  type_ids_off: 0xa0
+000048: 0100 0000          |  proto_ids_size: 1
+00004c: b400 0000          |  proto_ids_off: 0xb4
+000050: 0200 0000          |  field_ids_size: 2
+000054: c000 0000          |  field_ids_off: 0xc0
+000058: 0300 0000          |  method_ids_size: 3
+00005c: d000 0000          |  method_ids_off: 0xd0
+000060: 0100 0000          |  class_defs_size: 1
+000064: e800 0000          |  class_defs_off: 0xe8
+000068: 7801 0000          |  data_size: 376
+00006c: 0801 0000          |  data_off: 0x108
+                           |
+                           |-----------------------------
+                           |string_id_item section
+                           |-----------------------------
+                           |
+                           |[0] string_id_item
+000070: 0801 0000          |  string_data_item[0x108]: "<init>"
+                           |[1] string_id_item
+000074: 1001 0000          |  string_data_item[0x110]: "Anthy :)"
+                           |[2] string_id_item
+000078: 1a01 0000          |  string_data_item[0x11a]: "CONSTANT"
+                           |[3] string_id_item
+00007c: 2401 0000          |  string_data_item[0x124]: "CONST_STR"
+                           |[4] string_id_item
+000080: 2f01 0000          |  string_data_item[0x12f]: "Hello World! :)"
+                           |[5] string_id_item
+000084: 4001 0000          |  string_data_item[0x140]: "I"
+                           |[6] string_id_item
+000088: 4301 0000          |  string_data_item[0x143]: "Ljava/lang/Object;"
+                           |[7] string_id_item
+00008c: 5701 0000          |  string_data_item[0x157]: "Ljava/lang/String;"
+                           |[8] string_id_item
+000090: 6b01 0000          |  string_data_item[0x16b]: "Ltest/klass;"
+                           |[9] string_id_item
+000094: 7901 0000          |  string_data_item[0x179]: "V"
+                           |[10] string_id_item
+000098: 7c01 0000          |  string_data_item[0x17c]: "helloWorld"
+                           |[11] string_id_item
+00009c: 8801 0000          |  string_data_item[0x188]: "klass.java"
+                           |
+                           |-----------------------------
+                           |type_id_item section
+                           |-----------------------------
+                           |
+                           |[0] type_id_item
+0000a0: 0500 0000          |  string_id_item[5]: I
+                           |[1] type_id_item
+0000a4: 0600 0000          |  string_id_item[6]: Ljava/lang/Object;
+                           |[2] type_id_item
+0000a8: 0700 0000          |  string_id_item[7]: Ljava/lang/String;
+                           |[3] type_id_item
+0000ac: 0800 0000          |  string_id_item[8]: Ltest/klass;
+                           |[4] type_id_item
+0000b0: 0900 0000          |  string_id_item[9]: V
+                           |
+                           |-----------------------------
+                           |proto_id_item section
+                           |-----------------------------
+                           |
+                           |[0] proto_id_item
+0000b4: 0900 0000          |  shorty_idx = string_id_item[9]: V
+0000b8: 0400 0000          |  return_type_idx = type_id_item[4]: V
+0000bc: 0000 0000          |  parameters_off = type_list_item[NO_OFFSET]
+                           |
+                           |-----------------------------
+                           |field_id_item section
+                           |-----------------------------
+                           |
+                           |[0] field_id_item
+0000c0: 0300               |  class_idx = type_id_item[3]: Ltest/klass;
+0000c2: 0000               |  return_type_idx = type_id_item[0]: I
+0000c4: 0200 0000          |  name_idx = string_id_item[2]: CONSTANT
+                           |[1] field_id_item
+0000c8: 0300               |  class_idx = type_id_item[3]: Ltest/klass;
+0000ca: 0200               |  return_type_idx = type_id_item[2]: Ljava/lang/Stri
+                           |ng;
+0000cc: 0300 0000          |  name_idx = string_id_item[3]: CONST_STR
+                           |
+                           |-----------------------------
+                           |method_id_item section
+                           |-----------------------------
+                           |
+                           |[0] method_id_item
+0000d0: 0100               |  class_idx = type_id_item[1]: Ljava/lang/Object;
+0000d2: 0000               |  proto_idx = proto_id_item[0]: ()V
+0000d4: 0000 0000          |  name_idx = string_id_item[0]: <init>
+                           |[1] method_id_item
+0000d8: 0300               |  class_idx = type_id_item[3]: Ltest/klass;
+0000da: 0000               |  proto_idx = proto_id_item[0]: ()V
+0000dc: 0000 0000          |  name_idx = string_id_item[0]: <init>
+                           |[2] method_id_item
+0000e0: 0300               |  class_idx = type_id_item[3]: Ltest/klass;
+0000e2: 0000               |  proto_idx = proto_id_item[0]: ()V
+0000e4: 0a00 0000          |  name_idx = string_id_item[10]: helloWorld
+                           |
+                           |-----------------------------
+                           |class_def_item section
+                           |-----------------------------
+                           |
+                           |[0] class_def_item
+0000e8: 0300 0000          |  class_idx = type_id_item[3]: Ltest/klass;
+0000ec: 0100 0000          |  access_flags = 0x1: public
+0000f0: 0100 0000          |  superclass_idx = type_id_item[1]: Ljava/lang/Objec
+                           |t;
+0000f4: 0000 0000          |  interfaces_off = type_list_item[NO_OFFSET]
+0000f8: 0b00 0000          |  source_file_idx = string_id_item[11]: klass.java
+0000fc: 0000 0000          |  annotations_off = annotations_directory_item[NO_OF
+                           |FSET]
+000100: ce01 0000          |  class_data_off = class_data_item[0x1ce]
+000104: 9401 0000          |  static_values_off = encoded_array_item[0x194]
+                           |
+                           |-----------------------------
+                           |string_data_item section
+                           |-----------------------------
+                           |
+                           |[0] string_data_item
+000108: 06                 |  utf16_size = 6
+000109: 3c69 6e69 743e 00  |  data = "<init>"
+                           |[1] string_data_item
+000110: 08                 |  utf16_size = 8
+000111: 416e 7468 7920 3a29|  data = "Anthy :)"
+000119: 00                 |
+                           |[2] string_data_item
+00011a: 08                 |  utf16_size = 8
+00011b: 434f 4e53 5441 4e54|  data = "CONSTANT"
+000123: 00                 |
+                           |[3] string_data_item
+000124: 09                 |  utf16_size = 9
+000125: 434f 4e53 545f 5354|  data = "CONST_STR"
+00012d: 5200               |
+                           |[4] string_data_item
+00012f: 0f                 |  utf16_size = 15
+000130: 4865 6c6c 6f20 576f|  data = "Hello World! :)"
+000138: 726c 6421 203a 2900|
+                           |[5] string_data_item
+000140: 01                 |  utf16_size = 1
+000141: 4900               |  data = "I"
+                           |[6] string_data_item
+000143: 12                 |  utf16_size = 18
+000144: 4c6a 6176 612f 6c61|  data = "Ljava/lang/Object;"
+00014c: 6e67 2f4f 626a 6563|
+000154: 743b 00            |
+                           |[7] string_data_item
+000157: 12                 |  utf16_size = 18
+000158: 4c6a 6176 612f 6c61|  data = "Ljava/lang/String;"
+000160: 6e67 2f53 7472 696e|
+000168: 673b 00            |
+                           |[8] string_data_item
+00016b: 0c                 |  utf16_size = 12
+00016c: 4c74 6573 742f 6b6c|  data = "Ltest/klass;"
+000174: 6173 733b 00       |
+                           |[9] string_data_item
+000179: 01                 |  utf16_size = 1
+00017a: 5600               |  data = "V"
+                           |[10] string_data_item
+00017c: 0a                 |  utf16_size = 10
+00017d: 6865 6c6c 6f57 6f72|  data = "helloWorld"
+000185: 6c64 00            |
+                           |[11] string_data_item
+000188: 0a                 |  utf16_size = 10
+000189: 6b6c 6173 732e 6a61|  data = "klass.java"
+000191: 7661 00            |
+                           |
+                           |-----------------------------
+                           |encoded_array_item section
+                           |-----------------------------
+                           |
+                           |[0] encoded_array_item
+000194: 02                 |  size: 2
+                           |  element[0]
+000195: 24                 |    valueArg = 1, valueType = 0x4: int
+000196: 1412               |    value = 0x1214
+                           |  element[1]
+000198: 17                 |    valueArg = 0, valueType = 0x17: string
+000199: 01                 |    value = string_id_item[1]: "Anthy :)"
+00019a: 0000               |
+                           |
+                           |-----------------------------
+                           |annotation_set_item section
+                           |-----------------------------
+                           |
+                           |[0] annotation_set_item
+00019c: 0000 0000          |  size = 0
+                           |
+                           |-----------------------------
+                           |code_item section
+                           |-----------------------------
+                           |
+                           |[0] code_item: Ltest/klass;-><init>()V
+0001a0: 0100               |  registers_size = 1
+0001a2: 0100               |  ins_size = 1
+0001a4: 0100               |  outs_size = 1
+0001a6: 0000               |  tries_size = 0
+0001a8: 0000 0000          |  debug_info_off = 0x0
+0001ac: 0400 0000          |  insns_size = 0x4
+                           |  instructions:
+0001b0: 7010 0000 0000     |    invoke-direct {v0}, Ljava/lang/Object;-><init>()
+                           |V
+0001b6: 0e00               |    return-void
+                           |[1] code_item: Ltest/klass;->helloWorld()V
+0001b8: 0100               |  registers_size = 1
+0001ba: 0100               |  ins_size = 1
+0001bc: 0000               |  outs_size = 0
+0001be: 0000               |  tries_size = 0
+0001c0: 0000 0000          |  debug_info_off = 0x0
+0001c4: 0300 0000          |  insns_size = 0x3
+                           |  instructions:
+0001c8: 1a00 0400          |    const-string v0, "Hello World! :)"
+0001cc: 0e00               |    return-void
+                           |
+                           |-----------------------------
+                           |class_data_item section
+                           |-----------------------------
+                           |
+                           |[0] class_data_item: Ltest/klass;
+0001ce: 02                 |  static_fields_size = 2
+0001cf: 00                 |  instance_fields_size = 0
+0001d0: 02                 |  direct_methods_size = 2
+0001d1: 00                 |  virtual_methods_size = 0
+                           |  static_fields:
+                           |    static_field[0]
+0001d2: 00                 |      field_idx_diff = 0: field_id_item[0]: Ltest/kl
+                           |ass;->CONSTANT:I
+0001d3: 1a                 |      access_flags = 0x1a: private|static|final
+                           |    static_field[1]
+0001d4: 01                 |      field_idx_diff = 1: field_id_item[1]: Ltest/kl
+                           |ass;->CONST_STR:Ljava/lang/String;
+0001d5: 1a                 |      access_flags = 0x1a: private|static|final
+                           |  direct_methods:
+                           |    direct_method[0]
+0001d6: 01                 |      method_idx_diff = 1: method_id_item[1]: Ltest/
+                           |klass;-><init>()V
+0001d7: 8180 04            |      access_flags = 0x10001: public|constructor
+0001da: a003               |      code_off = code_item[0x1a0]
+                           |    direct_method[1]
+0001dc: 01                 |      method_idx_diff = 1: method_id_item[2]: Ltest/
+                           |klass;->helloWorld()V
+0001dd: 02                 |      access_flags = 0x2: private
+0001de: b803               |      code_off = code_item[0x1b8]
+0001e0: 0d00 0000          |size = 13
+                           |
+                           |-----------------------------
+                           |map_item section
+                           |-----------------------------
+                           |
+                           |[0] map_item
+0001e4: 0000               |  type = 0x0: header_item
+0001e6: 0000               |  unused
+0001e8: 0100 0000          |  size = 1
+0001ec: 0000 0000          |  offset = 0x0
+                           |[1] map_item
+0001f0: 0100               |  type = 0x1: string_id_item
+0001f2: 0000               |  unused
+0001f4: 0c00 0000          |  size = 12
+0001f8: 7000 0000          |  offset = 0x70
+                           |[2] map_item
+0001fc: 0200               |  type = 0x2: type_id_item
+0001fe: 0000               |  unused
+000200: 0500 0000          |  size = 5
+000204: a000 0000          |  offset = 0xa0
+                           |[3] map_item
+000208: 0300               |  type = 0x3: proto_id_item
+00020a: 0000               |  unused
+00020c: 0100 0000          |  size = 1
+000210: b400 0000          |  offset = 0xb4
+                           |[4] map_item
+000214: 0400               |  type = 0x4: field_id_item
+000216: 0000               |  unused
+000218: 0200 0000          |  size = 2
+00021c: c000 0000          |  offset = 0xc0
+                           |[5] map_item
+000220: 0500               |  type = 0x5: method_id_item
+000222: 0000               |  unused
+000224: 0300 0000          |  size = 3
+000228: d000 0000          |  offset = 0xd0
+                           |[6] map_item
+00022c: 0600               |  type = 0x6: class_def_item
+00022e: 0000               |  unused
+000230: 0100 0000          |  size = 1
+000234: e800 0000          |  offset = 0xe8
+                           |[7] map_item
+000238: 0220               |  type = 0x2002: string_data_item
+00023a: 0000               |  unused
+00023c: 0c00 0000          |  size = 12
+000240: 0801 0000          |  offset = 0x108
+                           |[8] map_item
+000244: 0520               |  type = 0x2005: encoded_array_item
+000246: 0000               |  unused
+000248: 0100 0000          |  size = 1
+00024c: 9401 0000          |  offset = 0x194
+                           |[9] map_item
+000250: 0310               |  type = 0x1003: annotation_set_item
+000252: 0000               |  unused
+000254: 0100 0000          |  size = 1
+000258: 9c01 0000          |  offset = 0x19c
+                           |[10] map_item
+00025c: 0120               |  type = 0x2001: code_item
+00025e: 0000               |  unused
+000260: 0200 0000          |  size = 2
+000264: a001 0000          |  offset = 0x1a0
+                           |[11] map_item
+000268: 0020               |  type = 0x2000: class_data_item
+00026a: 0000               |  unused
+00026c: 0100 0000          |  size = 1
+000270: ce01 0000          |  offset = 0x1ce
+                           |[12] map_item
+000274: 0010               |  type = 0x1000: map_list
+000276: 0000               |  unused
+000278: 0100 0000          |  size = 1
+00027c: e001 0000          |  offset = 0x1e0
