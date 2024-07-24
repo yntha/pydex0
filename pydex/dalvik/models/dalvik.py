@@ -513,13 +513,16 @@ class DalvikProtoIDItem:
     #: The list of parameter types for this prototype.
     parameters: DalvikTypeListItem | None
 
+    #: String list of parameters
+    parameter_list: list[str] | None
+
     @classmethod
     def from_raw_item(
         cls,
         raw_item: DalvikProtoID,
         shorty: DalvikStringItem | LazyDalvikString,
         return_type: DalvikTypeItem,
-        parameters: DalvikTypeListItem,
+        parameters: DalvikTypeListItem | None,
     ) -> DalvikProtoIDItem:
         """
         Create a DalvikProtoIDItem from a DalvikProtoID
@@ -531,7 +534,15 @@ class DalvikProtoIDItem:
             DalvikTypeListItem parameters: The list of parameter type items.
         """
 
-        return cls(raw_item, shorty, return_type, parameters)
+        if parameters is not None:
+            string_list = []
+
+            for type_item in parameters.types:
+                string_list.append(str(type_item))
+        else:
+            string_list = None
+
+        return cls(raw_item, shorty, return_type, parameters, string_list)
 
     def __str__(self) -> str:
         param_list = ", ".join(str(param) for param in self.parameters.types)

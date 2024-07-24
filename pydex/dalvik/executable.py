@@ -17,6 +17,10 @@ from pydex.dalvik.models import (
     DalvikStringItem,
     DalvikTypeItem,
     DalvikTypeID,
+    DalvikTypeList,
+    DalvikProtoID,
+    DalvikProtoIDItem,
+    DalvikTypeListItem,
 )
 from pydex.exc import InvalidDalvikHeader
 
@@ -63,6 +67,9 @@ class DexFile:
 
         #: The list of dalvik type items in the dex file.
         self.types: list[DalvikTypeItem] = []
+
+        #: The list of dalvik proto items in the dex file.
+        self.protos: list[DalvikProtoIDItem] = []
 
     @classmethod
     def from_path(cls, path: str, no_lazy_load: bool = False) -> DexFile:
@@ -119,6 +126,9 @@ class DexFile:
 
         # collect all the dalvik type items
         self.types = self.parse_types()
+
+        # collect all the dalvik proto items
+        self.protos = self.parse_protos()
 
         return self
 
@@ -372,6 +382,92 @@ class DexFile:
         """
 
         return await asyncio.to_thread(self.parse_types)
+
+    def parse_protos(self) -> list[DalvikProtoIDItem]:
+        """Collect all the dalvik proto items.
+
+        This function collects all the dalvik prototyoe items in this DEX file and returns them as a
+        list of :class:`~pydex.dalvik.models.DalvikProtoIDItem`. A clone stream is used so to not
+        alter the DEX file stream.
+        """
+
+        if self.header is None:
+            self.parse_dex_prologue()
+
+        if not self.strings:
+            self.strings = self.parse_strings()
+
+        # if there are still no strings, then we can't parse the protos.
+        # return immediately.
+        if not self.strings:
+            return []
+
+        if not self.types:
+            self.types = self.parse_types()
+
+        # if there are still no types, then we can't parse the protos.
+        # return immediately.
+        if not self.types:
+            return []
+
+        protos = []
+        clonestream = self.stream.clone()
+
+        for i in range(self.header.raw_item.proto_ids_size):
+            clonestream.seek(self.header.raw_item.proto_ids_off + (i * 12))
+            proto_id_off = clonestream.tell()
+
+            shorty_idx = clonestream.read_uint32()
+            return_type_idx = clonestream.read_uint32()
+            parameters_off = clonestream.read_uint32()
+
+            shorty = self.strings[shorty_idx]
+            return_type = self.types[return_type_idx]
+
+            if parameters_off != 0:
+                clonestream.seek(parameters_off)
+                length = clonestream.read_uint32()
+                entries = []
+
+                for j in range(length):
+                    entries.append(self.types[clonestream.read_uint16()].raw_item)
+
+                list_size = len(entries) * DalvikTypeID.struct_size
+
+                param_type_list = DalvikTypeListItem.from_raw_item(
+                    DalvikTypeList(
+                        offset=parameters_off,
+                        size=list_size + 4,
+                        data=self.data[parameters_off : parameters_off + 4 + list_size],
+                        length=length,
+                        entries=entries,
+                    ),
+                    self.types,
+                )
+                param_string_list = [x.descriptor.value for x in param_type_list.types]
+            else:
+                param_type_list = None
+                param_string_list = None
+
+            protos.append(
+                DalvikProtoIDItem(
+                    DalvikProtoID(
+                        offset=proto_id_off,
+                        size=12,
+                        data=self.data[proto_id_off : proto_id_off + 12],
+                        shorty_idx=shorty_idx,
+                        return_type_idx=return_type_idx,
+                        parameters_off=parameters_off,
+                        id_number=i,
+                    ),
+                    shorty=shorty,
+                    return_type=return_type,
+                    parameters=param_type_list,
+                    parameter_list=param_string_list,
+                )
+            )
+
+        return protos
 
     def load_all_strings(self) -> list[DalvikStringItem]:
         """Load all the dalvik string items.
