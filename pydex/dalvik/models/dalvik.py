@@ -511,7 +511,7 @@ class DalvikProtoIDItem:
     return_type: DalvikTypeItem
 
     #: The list of parameter types for this prototype.
-    parameters: DalvikTypeListItem
+    parameters: DalvikTypeListItem | None
 
     @classmethod
     def from_raw_item(
@@ -536,4 +536,4 @@ class DalvikProtoIDItem:
     def __str__(self) -> str:
         param_list = ", ".join(str(param) for param in self.parameters.types)
 
-        return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value} "
+        return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value}"
