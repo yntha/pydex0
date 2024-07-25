@@ -45,9 +45,25 @@ class DexFile:
     the contents of a Dex (Dalvik Executable) file. It provides methods to parse
     the file both synchronously and asynchronously.
 
+    Certain flag constants exist in this class which let the parser know if a
+    specific section has been parsed already. This prevents the parser from
+    re-parsing the same section multiple times.
+
     :param data: The raw bytes of the dex file.
     :param no_lazy_load: A flag that indicates whether lazy loading should be disabled.
     """
+
+    #: Flag that indicates the header has been parsed.
+    FLAG_PARSED_HEADER: int = 1
+
+    #: Flag that indicates the strings have been parsed.
+    FLAG_PARSED_STRINGS: int = 2
+
+    #: Flag that indicates the types have been parsed.
+    FLAG_PARSED_TYPES: int = 4
+
+    #: Flag that indicates the protos have been parsed.
+    FLAG_PARSED_PROTOS: int = 8
 
     def __init__(self, data: bytes, no_lazy_load: bool = False):
         #: The raw bytes of the dex file.
@@ -55,6 +71,9 @@ class DexFile:
 
         #: A flag that indicates whether lazy loading should be disabled.
         self.no_lazy_load: bool = no_lazy_load
+
+        #: The flags that indicate which sections have been parsed.
+        self.section_flags: int = 0
 
         #: The stream used to read the dex file.
         self.stream: DeserializingStream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
@@ -243,6 +262,8 @@ class DexFile:
         # get the data offset
         data_off = clonestream.read_uint32()
 
+        self.section_flags |= self.FLAG_PARSED_HEADER
+
         return DalvikHeaderItem.from_raw_item(
             DalvikHeader(
                 offset=0,
@@ -317,6 +338,8 @@ class DexFile:
                 )
             )
 
+        self.section_flags |= self.FLAG_PARSED_STRINGS
+
         return lazy_strings
 
     async def parse_strings_async(self) -> list[LazyDalvikString]:
@@ -370,6 +393,8 @@ class DexFile:
                     descriptor=descriptor,
                 )
             )
+
+        self.section_flags |= self.FLAG_PARSED_TYPES
 
         return types
 
@@ -466,6 +491,8 @@ class DexFile:
                     parameter_list=param_string_list,
                 )
             )
+
+        self.section_flags |= self.FLAG_PARSED_PROTOS
 
         return protos
 
