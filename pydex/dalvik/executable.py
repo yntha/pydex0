@@ -363,8 +363,6 @@ class DexFile:
         if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
             self.strings = self.parse_strings()
 
-        # if there are still no strings, then we can't parse the types.
-        # return immediately.
         if not self.strings:
             return []
 
@@ -416,9 +414,7 @@ class DexFile:
         if self.section_flags & self.FLAG_PARSED_TYPES == 0:
             self.types = self.parse_types()
 
-        # if there are still no types, then we can't parse the protos.
-        # return immediately.
-        if not self.types:
+        if not self.types or not self.strings:
             return []
 
         protos = []
@@ -503,8 +499,6 @@ class DexFile:
         if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
             self.strings = self.parse_strings()
 
-        # if there are still no strings, then we can't load them.
-        # return immediately.
         if not self.strings:
             return []
 
