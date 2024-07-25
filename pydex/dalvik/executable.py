@@ -313,7 +313,7 @@ class DexFile:
         file stream.
         """
 
-        if self.header is None:
+        if self.section_flags & self.FLAG_PARSED_HEADER == 0:
             self.parse_dex_prologue()
 
         lazy_strings = []
@@ -360,10 +360,7 @@ class DexFile:
         file stream.
         """
 
-        if self.header is None:
-            self.parse_dex_prologue()
-
-        if not self.strings:
+        if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
             self.strings = self.parse_strings()
 
         # if there are still no strings, then we can't parse the types.
@@ -416,18 +413,7 @@ class DexFile:
         alter the DEX file stream.
         """
 
-        if self.header is None:
-            self.parse_dex_prologue()
-
-        if not self.strings:
-            self.strings = self.parse_strings()
-
-        # if there are still no strings, then we can't parse the protos.
-        # return immediately.
-        if not self.strings:
-            return []
-
-        if not self.types:
+        if self.section_flags & self.FLAG_PARSED_TYPES == 0:
             self.types = self.parse_types()
 
         # if there are still no types, then we can't parse the protos.
@@ -514,7 +500,7 @@ class DexFile:
         model in :attr:`strings` to a loaded :class:`~pydex.dalvik.models.DalvikStringItem` model.
         """
 
-        if not self.strings:
+        if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
             self.strings = self.parse_strings()
 
         # if there are still no strings, then we can't load them.
@@ -553,8 +539,11 @@ class DexFile:
             assigned in the order they appear in the dex file.
         """
 
-        if self.header is None:
+        if self.section_flags & self.FLAG_PARSED_HEADER == 0:
             self.parse_dex_prologue()
+
+        if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
+            self.strings = self.parse_strings()
 
         if len(self.strings) > 0:
             return self.strings[string_id]
