@@ -6,6 +6,7 @@ import typing
 import zlib
 
 from dataclasses import dataclass
+from functools import wraps
 
 from datastream import DeserializingStream, ByteOrder
 
@@ -134,6 +135,8 @@ class DexFile:
         """
 
         def decorator(func: typing.Callable) -> typing.Callable:
+
+            @wraps(func)
             def wrapper(self, *args, **kwargs):
                 do_header = self.section_flags & self.FLAG_PARSED_HEADER == 0
                 do_strings = self.section_flags & self.FLAG_PARSED_STRINGS == 0
