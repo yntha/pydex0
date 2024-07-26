@@ -402,7 +402,7 @@ class DexFile:
         clonestream = self.stream.clone()
 
         for i in range(self.header.raw_item.string_ids_size):
-            clonestream.seek(self.header.raw_item.string_ids_off + i * 4)
+            clonestream.seek(self.header.raw_item.string_ids_off + i * DalvikStringID.struct_size)
             string_id_off = clonestream.tell()
 
             string_data_off = clonestream.read_uint32()
@@ -412,8 +412,8 @@ class DexFile:
                 LazyDalvikString(
                     DalvikStringID(
                         offset=string_id_off,
-                        size=4,
-                        data=self.data[string_id_off : string_id_off + 4],
+                        size=DalvikStringID.struct_size,
+                        data=self.data[string_id_off : string_id_off + DalvikStringID.struct_size],
                         string_data_off=string_data_off,
                         id_number=i,
                     )
@@ -450,7 +450,7 @@ class DexFile:
         clonestream = self.stream.clone()
 
         for i in range(self.header.raw_item.type_ids_size):
-            clonestream.seek(self.header.raw_item.type_ids_off + i * 4)
+            clonestream.seek(self.header.raw_item.type_ids_off + i * DalvikTypeID.struct_size)
             type_id_off = clonestream.tell()
 
             descriptor_idx = clonestream.read_uint32()
@@ -460,8 +460,8 @@ class DexFile:
                 DalvikTypeItem(
                     DalvikTypeID(
                         offset=type_id_off,
-                        size=4,
-                        data=self.data[type_id_off : type_id_off + 4],
+                        size=DalvikTypeID.struct_size,
+                        data=self.data[type_id_off : type_id_off + DalvikTypeID.struct_size],
                         descriptor_idx=descriptor_idx,
                         id_number=i,
                     ),
@@ -499,7 +499,7 @@ class DexFile:
         clonestream = self.stream.clone()
 
         for i in range(self.header.raw_item.proto_ids_size):
-            clonestream.seek(self.header.raw_item.proto_ids_off + (i * 12))
+            clonestream.seek(self.header.raw_item.proto_ids_off + (i * DalvikProtoID.struct_size))
             proto_id_off = clonestream.tell()
 
             shorty_idx = clonestream.read_uint32()
@@ -538,8 +538,8 @@ class DexFile:
                 DalvikProtoIDItem(
                     DalvikProtoID(
                         offset=proto_id_off,
-                        size=12,
-                        data=self.data[proto_id_off : proto_id_off + 12],
+                        size=DalvikProtoID.struct_size,
+                        data=self.data[proto_id_off : proto_id_off + DalvikProtoID.struct_size],
                         shorty_idx=shorty_idx,
                         return_type_idx=return_type_idx,
                         parameters_off=parameters_off,
