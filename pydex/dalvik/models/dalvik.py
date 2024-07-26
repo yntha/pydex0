@@ -545,9 +545,12 @@ class DalvikProtoIDItem:
         return cls(raw_item, shorty, return_type, parameters, string_list)
 
     def __str__(self) -> str:
-        param_list = ", ".join(str(param) for param in self.parameters.types)
+        if self.parameters is not None:
+            param_list = ", ".join(str(param) for param in self.parameters.types)
+        else:
+            param_list = ""
 
-        return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value}"
+        return f"({param_list}){self.return_type.descriptor.value}"
 
 
 @dataclass
