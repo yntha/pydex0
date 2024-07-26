@@ -102,6 +102,39 @@ class DexFile:
         with open(path, "rb") as f:
             return cls(f.read(), no_lazy_load=no_lazy_load)
 
+    @staticmethod
+    def requires_section(flags: int) -> typing.Callable:
+        """Decorator that checks if a section has been parsed.
+
+        This decorator checks if a specific section has been parsed before executing the function. If the section has
+        not yet been parsed, the function will parse it before executing the function.
+
+        Args:
+             int flags: The flags that indicate which sections need to be parsed.
+        """
+
+        def decorator(func: typing.Callable) -> typing.Callable:
+            def wrapper(self, *args, **kwargs):
+                do_header = self.section_flags & self.FLAG_PARSED_HEADER == 0
+                do_strings = self.section_flags & self.FLAG_PARSED_STRINGS == 0
+                do_types = self.section_flags & self.FLAG_PARSED_TYPES == 0
+                do_protos = self.section_flags & self.FLAG_PARSED_PROTOS == 0
+
+                if do_header and flags & self.FLAG_PARSED_HEADER != 0:
+                    self.parse_dex_prologue()
+                if do_strings and flags & self.FLAG_PARSED_STRINGS != 0:
+                    self.strings = self.parse_strings()
+                if do_types and flags & self.FLAG_PARSED_TYPES != 0:
+                    self.types = self.parse_types()
+                if do_protos and flags & self.FLAG_PARSED_PROTOS != 0:
+                    self.protos = self.parse_protos()
+
+                return func(self, *args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
     def parse_dex_prologue(self) -> typing.Self:
         """
         Helper function that does misc startup tasks for parsing the dex file.
@@ -305,6 +338,7 @@ class DexFile:
 
         return await asyncio.to_thread(self.parse_header)
 
+    @requires_section(FLAG_PARSED_HEADER)
     def parse_strings(self) -> list[LazyDalvikString]:
         """Collect all the dalvik string items.
 
@@ -312,9 +346,6 @@ class DexFile:
         :class:`~pydex.dalvik.models.LazyDalvikString`. A clone stream is used so to not alter the DEX
         file stream.
         """
-
-        if self.section_flags & self.FLAG_PARSED_HEADER == 0:
-            self.parse_dex_prologue()
 
         lazy_strings = []
         clonestream = self.stream.clone()
@@ -352,6 +383,7 @@ class DexFile:
 
         return await asyncio.to_thread(self.parse_strings)
 
+    @requires_section(FLAG_PARSED_STRINGS)
     def parse_types(self) -> list[DalvikTypeItem]:
         """Collect all the dalvik type items.
 
@@ -359,9 +391,6 @@ class DexFile:
         :class:`~pydex.dalvik.models.DalvikTypeItem`. A clone stream is used so to not alter the DEX
         file stream.
         """
-
-        if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
-            self.strings = self.parse_strings()
 
         if not self.strings:
             return []
@@ -403,6 +432,7 @@ class DexFile:
 
         return await asyncio.to_thread(self.parse_types)
 
+    @requires_section(FLAG_PARSED_TYPES)
     def parse_protos(self) -> list[DalvikProtoIDItem]:
         """Collect all the dalvik proto items.
 
@@ -410,9 +440,6 @@ class DexFile:
         list of :class:`~pydex.dalvik.models.DalvikProtoIDItem`. A clone stream is used so to not
         alter the DEX file stream.
         """
-
-        if self.section_flags & self.FLAG_PARSED_TYPES == 0:
-            self.types = self.parse_types()
 
         if not self.types or not self.strings:
             return []
@@ -488,6 +515,7 @@ class DexFile:
 
         return await asyncio.to_thread(self.parse_protos)
 
+    @requires_section(FLAG_PARSED_STRINGS)
     def load_all_strings(self) -> list[DalvikStringItem]:
         """Load all the dalvik string items.
 
@@ -495,9 +523,6 @@ class DexFile:
         all the lazy dalvik strings in the :attr:`strings` attribute. It will also convert every
         model in :attr:`strings` to a loaded :class:`~pydex.dalvik.models.DalvikStringItem` model.
         """
-
-        if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
-            self.strings = self.parse_strings()
 
         if not self.strings:
             return []
@@ -520,6 +545,7 @@ class DexFile:
 
         return await asyncio.to_thread(self.load_all_strings)
 
+    @requires_section(FLAG_PARSED_STRINGS | FLAG_PARSED_HEADER)
     def get_string_by_id(self, string_id: int) -> LazyDalvikString:
         """Get a dalvik string by its id.
 
@@ -532,12 +558,6 @@ class DexFile:
         :param string_id: The id of the string to get. IDs are 0-indexed, and are
             assigned in the order they appear in the dex file.
         """
-
-        if self.section_flags & self.FLAG_PARSED_HEADER == 0:
-            self.parse_dex_prologue()
-
-        if self.section_flags & self.FLAG_PARSED_STRINGS == 0:
-            self.strings = self.parse_strings()
 
         if len(self.strings) > 0:
             return self.strings[string_id]
