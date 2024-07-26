@@ -10,18 +10,20 @@ from functools import wraps
 
 from datastream import DeserializingStream, ByteOrder
 
-from pydex.dalvik.models import (
+from pydex.dalvik.models.dalvik import (
     DalvikHeader,
     DalvikHeaderItem,
-    LazyDalvikString,
-    DalvikStringID,
     DalvikStringItem,
-    DalvikTypeItem,
+    DalvikStringID,
+    LazyDalvikString,
     DalvikTypeID,
+    DalvikTypeItem,
     DalvikTypeList,
     DalvikProtoID,
     DalvikProtoIDItem,
     DalvikTypeListItem,
+    DalvikField,
+    DalvikFieldItem,
 )
 from pydex.exc import InvalidDalvikHeader
 
@@ -86,6 +88,9 @@ class DexFile:
     #: Flag that indicates the protos have been parsed.
     FLAG_PARSED_PROTOS: int = 8
 
+    #: Flag that indicates the fields have been parsed.
+    FLAG_PARSED_FIELDS: int = 16
+
     def __init__(self, data: bytes, no_lazy_load: bool = False):
         #: The raw bytes of the dex file.
         self.data: bytes = data
@@ -110,6 +115,9 @@ class DexFile:
 
         #: The list of dalvik proto items in the dex file.
         self.protos: list[DalvikProtoIDItem] = []
+
+        #: The list of dalvik field items in the dex file.
+        self.fields: list[DalvikFieldItem] = []
 
     @classmethod
     def from_path(cls, path: str, no_lazy_load: bool = False) -> DexFile:
@@ -142,6 +150,7 @@ class DexFile:
                 do_strings = self.section_flags & self.FLAG_PARSED_STRINGS == 0
                 do_types = self.section_flags & self.FLAG_PARSED_TYPES == 0
                 do_protos = self.section_flags & self.FLAG_PARSED_PROTOS == 0
+                do_fields = self.section_flags & self.FLAG_PARSED_FIELDS == 0
 
                 if do_header and flags & self.FLAG_PARSED_HEADER != 0:
                     self.parse_dex_prologue()
@@ -151,6 +160,8 @@ class DexFile:
                     self.types = self.parse_types()
                 if do_protos and flags & self.FLAG_PARSED_PROTOS != 0:
                     self.protos = self.parse_protos()
+                if do_fields and flags & self.FLAG_PARSED_FIELDS != 0:
+                    self.fields = self.parse_fields()
 
                 return func(self, *args, **kwargs)
 
@@ -204,6 +215,9 @@ class DexFile:
 
         # collect all the dalvik proto items
         self.protos = self.parse_protos()
+
+        # collect all the dalvik field items
+        self.fields = self.parse_fields()
 
         return self
 
@@ -537,6 +551,64 @@ class DexFile:
         """
 
         return await asyncio.to_thread(self.parse_protos)
+
+    @requires_section(FLAG_PARSED_TYPES)
+    def parse_fields(self) -> list[DalvikFieldItem]:
+        """Collect all the dalvik field items.
+
+        This function collects all the dalvik field items in this DEX file and returns them as a
+        list of :class:`~pydex.dalvik.models.DalvikFieldItem`. A clone stream is used so to not
+        alter the DEX file stream.
+        """
+
+        if not self.types or not self.strings:
+            return []
+
+        fields = []
+        clonestream = self.stream.clone()
+
+        for i in range(self.header.raw_item.field_ids_size):
+            clonestream.seek(self.header.raw_item.field_ids_off + (i * DalvikField.struct_size))
+            field_id_off = clonestream.tell()
+
+            class_idx = clonestream.read_uint16()
+            type_idx = clonestream.read_uint16()
+            name_idx = clonestream.read_uint32()
+
+            class_type = self.types[class_idx]
+            type_type = self.types[type_idx]
+            name = self.strings[name_idx]
+
+            fields.append(
+                DalvikFieldItem(
+                    DalvikField(
+                        offset=field_id_off,
+                        size=DalvikField.struct_size,
+                        data=self.data[field_id_off : field_id_off + DalvikField.struct_size],
+                        class_idx=class_idx,
+                        type_idx=type_idx,
+                        name_idx=name_idx,
+                        id_number=i,
+                    ),
+                    class_def=class_type,
+                    type=type_type,
+                    name=name,
+                )
+            )
+
+        self.section_flags |= self.FLAG_PARSED_FIELDS
+
+        return fields
+
+    async def parse_fields_async(self) -> list[DalvikFieldItem]:
+        """Collect all the dalvik field items asynchronously.
+
+        This function collects all the dalvik field items in this DEX file and returns them as a
+        list of :class:`~pydex.dalvik.models.DalvikFieldItem`. A clone stream is used so to not
+        alter the DEX file stream.
+        """
+
+        return await asyncio.to_thread(self.parse_fields)
 
     @requires_section(FLAG_PARSED_STRINGS)
     def load_all_strings(self) -> list[DalvikStringItem]:

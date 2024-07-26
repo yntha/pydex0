@@ -228,3 +228,14 @@ the low-level classes.
 
 .. autoclass:: DalvikTypeListItem
     :members:
+
+----
+
+.. autoclass:: DalvikField
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikFieldItem
+    :members:

@@ -30,7 +30,7 @@ class DalvikRawItem:
 @dataclass
 class DalvikHeader(DalvikRawItem):
     """
-    A dataclass that represents the raw header of a dex file.
+    A dataclass that represents the raw ``header_item`` of a dex file.
 
     .. admonition:: Source
         :class: seealso
@@ -115,7 +115,7 @@ class DalvikHeader(DalvikRawItem):
 @dataclass
 class DalvikHeaderItem:
     """
-    A dataclass that represents the high-level header of a dex file.
+    A dataclass that represents the high-level ``header_item`` of a dex file.
     """
 
     #: The raw header item.
@@ -139,10 +139,10 @@ class DalvikHeaderItem:
     @classmethod
     def from_raw_item(cls, raw_item: DalvikHeader) -> DalvikHeaderItem:
         """
-        Create a DalvikHeaderItem from a DalvikRawItem.
+        Create a ``DalvikHeaderItem`` from a ``DalvikHeader``.
 
         Args:
-            DalvikHeader raw_item: The DalvikRawItem that contains the primitive data for this item.
+            DalvikHeader raw_item: The ``DalvikHeader`` that contains the primitive data for this item.
 
         Raises:
             InvalidDalvikHeader: If ``endian_tag`` is invalid.
@@ -166,7 +166,7 @@ class DalvikHeaderItem:
 @dataclass
 class DalvikStringID(DalvikRawItem):
     """
-    A dataclass that represents the raw string id of a dex file. Aligns to 4 bytes.
+    A dataclass that represents a raw ``string_id_item`` in a dex file.
 
     .. admonition:: Source
         :class: seealso
@@ -187,7 +187,7 @@ class DalvikStringID(DalvikRawItem):
 @dataclass
 class DalvikStringData(DalvikRawItem):
     """
-    A dataclass that represents the raw string data of a dex file.
+    A dataclass that represents a raw ``string_data_item`` in a dex file.
 
     .. admonition:: Source
         :class: seealso
@@ -207,7 +207,7 @@ class DalvikStringData(DalvikRawItem):
 @dataclass
 class DalvikStringItem:
     """
-    A dataclass that represents a high-level string data item in a dex file.
+    A dataclass that represents a high-level ``string_data_item`` in a dex file.
     """
 
     #: The raw string data item.
@@ -221,11 +221,11 @@ class DalvikStringItem:
     @classmethod
     def from_raw_item(cls, raw_item: DalvikStringData, string_id: DalvikStringID) -> DalvikStringItem:
         """
-        Create a DalvikStringItem from a DalvikStringID and DalvikStringData.
+        Create a ``DalvikStringItem`` from a ``DalvikStringID`` and ``DalvikStringData``.
 
         Args:
-            DalvikStringData raw_item: The DalvikStringData that will contain the data of this item.
-            DalvikStringID string_id: The DalvikStringID.
+            DalvikStringData raw_item: The ``DalvikStringData`` that will contain the data of this item.
+            DalvikStringID string_id: The ``DalvikStringID``.
         """
 
         return cls(raw_item, string_id)
@@ -332,9 +332,9 @@ class LazyDalvikString:
         Load the string from the stream.
 
         Args:
-            DeserializingStream stream: The DeserializingStream to read from.
+            DeserializingStream stream: The ``DeserializingStream`` to read from.
         Returns:
-            A loaded DalvikStringItem.
+            A loaded ``DalvikStringItem``.
         """
 
         # save the current position so to not disrupt the processing flow.
@@ -362,9 +362,9 @@ class LazyDalvikString:
         """
         Load the string from the stream asynchronously.
         Args:
-            DeserializingStream stream: The DeserializingStream to read from.
+            DeserializingStream stream: The ``DeserializingStream`` to read from.
 
-        Returns: A loaded DalvikStringItem.
+        Returns: A loaded ``DalvikStringItem``.
         """
 
         return await asyncio.to_thread(self.load, stream)
@@ -373,7 +373,7 @@ class LazyDalvikString:
 @dataclass
 class DalvikTypeID(DalvikRawItem):
     """
-    A dataclass that represents the raw type id of a dex file.
+    A dataclass that represents a raw ``type_id_item`` in a dex file.
 
     .. admonition:: Source
         :class: seealso
@@ -393,7 +393,7 @@ class DalvikTypeID(DalvikRawItem):
 @dataclass
 class DalvikTypeItem:
     """
-    A dataclass that represents a high-level type item in a dex file.
+    A dataclass that represents a high-level ``type_id_item`` in a dex file.
     """
 
     #: The raw type id item.
@@ -407,10 +407,10 @@ class DalvikTypeItem:
         cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString]
     ) -> DalvikTypeItem:
         """
-        Create a DalvikTypeItem from a DalvikTypeID
+        Create a ``DalvikTypeItem`` from a ``DalvikTypeID``.
 
         Args:
-            DalvikTypeID raw_item: The DalvikTypeID that will contain the data of this item.
+            DalvikTypeID raw_item: The ``DalvikTypeID`` that will contain the data of this item.
             list[DalvikStringItem | LazyDalvikString] strings: The list of string items.
         """
 
@@ -423,7 +423,7 @@ class DalvikTypeItem:
 @dataclass
 class DalvikProtoID(DalvikRawItem):
     """
-    A dataclass that represents a prototype found in a dex file.
+    A dataclass that represents a ``proto_id_item`` found in a dex file.
 
     .. admonition:: Source
         :class: seealso
@@ -450,7 +450,7 @@ class DalvikProtoID(DalvikRawItem):
 @dataclass
 class DalvikTypeList(DalvikRawItem):
     """
-    A dataclass that represents a list of types found in a dex file.
+    A dataclass that represents a ``type_list`` item found in a dex file.
 
     .. admonition:: Source
         :class: seealso
@@ -470,7 +470,7 @@ class DalvikTypeList(DalvikRawItem):
 @dataclass
 class DalvikTypeListItem:
     """
-    A dataclass that represents a high-level type list item in a dex file.
+    A dataclass that represents a high-level ``type_list`` item in a dex file.
     """
 
     #: The raw type list item.
@@ -482,10 +482,10 @@ class DalvikTypeListItem:
     @classmethod
     def from_raw_item(cls, raw_item: DalvikTypeList, types: list[DalvikTypeItem]) -> DalvikTypeListItem:
         """
-        Create a DalvikTypeListItem from a DalvikTypeList
+        Create a ``DalvikTypeListItem`` from a ``DalvikTypeList``.
 
         Args:
-            DalvikTypeList raw_item: The :class:`~pydex.dalvik.models.DalvikTypeList` that will contain the data of
+            DalvikTypeList raw_item: The ``DalvikTypeList`` instance that will contain the data of
                 this item.
             list[DalvikTypeItem] types: The complete list of types in the dex file.
         """
@@ -498,7 +498,7 @@ class DalvikTypeListItem:
 @dataclass
 class DalvikProtoIDItem:
     """
-    A dataclass that represents a high-level prototype item in a dex file.
+    A dataclass that represents a high-level ``proto_id_item`` in a dex file.
     """
 
     #: The raw prototype id item.
@@ -525,10 +525,10 @@ class DalvikProtoIDItem:
         parameters: DalvikTypeListItem | None,
     ) -> DalvikProtoIDItem:
         """
-        Create a DalvikProtoIDItem from a DalvikProtoID
+        Create a ``DalvikProtoIDItem`` from a ``DalvikProtoID``.
 
         Args:
-            DalvikProto raw_item: The :class:`~pydex.dalvik.models.DalvikProtoID` that will contain the data of this item.
+            DalvikProto raw_item: The ``DalvikProtoID`` instance that will contain the data of this item.
             DalvikStringItem | LazyDalvikString shorty: The shorty string item.
             DalvikTypeItem return_type: The return type item.
             DalvikTypeListItem parameters: The list of parameter type items.
@@ -548,3 +548,69 @@ class DalvikProtoIDItem:
         param_list = ", ".join(str(param) for param in self.parameters.types)
 
         return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value}"
+
+
+@dataclass
+class DalvikField(DalvikRawItem):
+    """
+    A dataclass that represents a ``field_id_item`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::field_id_item <https://source.android.com/docs/core/runtime/dex-format#field-id-item>`_
+    """
+
+    struct_size: ClassVar[int] = 0x08
+
+    #: Index into the ``type_ids`` list for the definer of this field.
+    class_idx: int  # 2 bytes
+
+    #: Index into the ``type_ids`` list for the type of this field.
+    type_idx: int  # 2 bytes
+
+    #: Index into the ``string_ids`` list for the name of this field.
+    name_idx: int  # 4 bytes
+
+    #: The index number of this field. This field is not part of the dex file format.
+    id_number: int
+
+
+@dataclass
+class DalvikFieldItem:
+    """
+    A dataclass that represents a high-level ``field_id_item`` in a dex file.
+    """
+
+    #: The raw ``field_id_item``.
+    raw_item: DalvikField
+
+    #: The class this field belongs to.
+    class_def: DalvikTypeItem
+
+    #: The type of the field.
+    type: DalvikTypeItem
+
+    #: The name of the field.
+    name: DalvikStringItem
+
+    @classmethod
+    def from_raw_item(
+        cls,
+        raw_item: DalvikField,
+        types: list[DalvikTypeItem],
+        strings: list[DalvikStringItem],
+    ) -> DalvikFieldItem:
+        """
+        Create a ``DalvikFieldItem`` from a ``DalvikField``
+
+        Args:
+            DalvikField raw_item: The ``DalvikField`` instance that will contain the data of this item.
+            list[DalvikTypeItem] types: The list of type items.
+            list[DalvikStringItem] strings: The list of string items.
+        """
+
+        return cls(raw_item, types[raw_item.class_idx], types[raw_item.type_idx], strings[raw_item.name_idx])
+
+    def __str__(self) -> str:
+        return f"{self.class_def}->{self.name}:{self.type}"

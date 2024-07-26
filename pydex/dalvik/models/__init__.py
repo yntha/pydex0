@@ -17,6 +17,8 @@ from pydex.dalvik.models.dalvik import (
     DalvikProtoID,
     DalvikProtoIDItem,
     DalvikTypeListItem,
+    DalvikField,
+    DalvikFieldItem,
 )
 
 
@@ -63,7 +65,7 @@ def custom_dict_factory(data: list[tuple[str, Any]]) -> Any:
     return dict(data)
 
 
-def dump_model_json(model: Any):
+def dump_model_json(model: Any) -> str:
     """Dump a model to a JSON string.
 
     Args:
