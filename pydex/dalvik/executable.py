@@ -24,6 +24,8 @@ from pydex.dalvik.models.dalvik import (
     DalvikTypeListItem,
     DalvikField,
     DalvikFieldItem,
+    DalvikMethod,
+    DalvikMethodItem,
 )
 from pydex.exc import InvalidDalvikHeader
 
@@ -91,6 +93,9 @@ class DexFile:
     #: Flag that indicates the fields have been parsed.
     FLAG_PARSED_FIELDS: int = 16
 
+    #: Flag that indicates the methods have been parsed.
+    FLAG_PARSED_METHODS: int = 32
+
     def __init__(self, data: bytes, no_lazy_load: bool = False):
         #: The raw bytes of the dex file.
         self.data: bytes = data
@@ -118,6 +123,9 @@ class DexFile:
 
         #: The list of dalvik field items in the dex file.
         self.fields: list[DalvikFieldItem] = []
+
+        #: The list of dalvik method items in the dex file.
+        self.methods: list[DalvikMethodItem] = []
 
     @classmethod
     def from_path(cls, path: str, no_lazy_load: bool = False) -> DexFile:
@@ -151,6 +159,7 @@ class DexFile:
                 do_types = self.section_flags & self.FLAG_PARSED_TYPES == 0
                 do_protos = self.section_flags & self.FLAG_PARSED_PROTOS == 0
                 do_fields = self.section_flags & self.FLAG_PARSED_FIELDS == 0
+                do_methods = self.section_flags & self.FLAG_PARSED_METHODS == 0
 
                 if do_header and flags & self.FLAG_PARSED_HEADER != 0:
                     self.parse_dex_prologue()
@@ -162,6 +171,8 @@ class DexFile:
                     self.protos = self.parse_protos()
                 if do_fields and flags & self.FLAG_PARSED_FIELDS != 0:
                     self.fields = self.parse_fields()
+                if do_methods and flags & self.FLAG_PARSED_METHODS != 0:
+                    self.methods = self.parse_methods()
 
                 return func(self, *args, **kwargs)
 
@@ -218,6 +229,9 @@ class DexFile:
 
         # collect all the dalvik field items
         self.fields = self.parse_fields()
+
+        # collect all the dalvik method items
+        self.methods = self.parse_methods()
 
         return self
 
@@ -609,6 +623,54 @@ class DexFile:
         """
 
         return await asyncio.to_thread(self.parse_fields)
+
+    @requires_section(FLAG_PARSED_PROTOS)
+    def parse_methods(self) -> list[DalvikMethodItem]:
+        """Collect all the dalvik method items.
+
+        This function collects all the dalvik method items in this DEX file and returns them as a
+        list of :class:`~pydex.dalvik.models.DalvikMethodItem`. A clone stream is used so to not
+        alter the DEX file stream.
+        """
+
+        if not self.types or not self.strings or not self.protos:
+            return []
+
+        methods = []
+        clonestream = self.stream.clone()
+
+        for i in range(self.header.raw_item.method_ids_size):
+            clonestream.seek(self.header.raw_item.method_ids_off + (i * DalvikMethod.struct_size))
+            method_id_off = clonestream.tell()
+
+            class_idx = clonestream.read_uint16()
+            proto_idx = clonestream.read_uint16()
+            name_idx = clonestream.read_uint32()
+
+            class_type = self.types[class_idx]
+            proto_type = self.protos[proto_idx]
+            name = self.strings[name_idx]
+
+            methods.append(
+                DalvikMethodItem(
+                    DalvikMethod(
+                        offset=method_id_off,
+                        size=DalvikMethod.struct_size,
+                        data=self.data[method_id_off : method_id_off + DalvikMethod.struct_size],
+                        class_idx=class_idx,
+                        proto_idx=proto_idx,
+                        name_idx=name_idx,
+                        id_number=i,
+                    ),
+                    class_def=class_type,
+                    proto=proto_type,
+                    name=name,
+                )
+            )
+
+        self.section_flags |= self.FLAG_PARSED_METHODS
+
+        return methods
 
     @requires_section(FLAG_PARSED_STRINGS)
     def load_all_strings(self) -> list[DalvikStringItem]:
