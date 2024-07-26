@@ -407,7 +407,7 @@ class DalvikTypeItem:
         cls, raw_item: DalvikTypeID, strings: list[DalvikStringItem | LazyDalvikString]
     ) -> DalvikTypeItem:
         """
-        Create a ``DalvikTypeItem`` from a ``DalvikTypeID``
+        Create a ``DalvikTypeItem`` from a ``DalvikTypeID``.
 
         Args:
             DalvikTypeID raw_item: The ``DalvikTypeID`` that will contain the data of this item.
@@ -482,7 +482,7 @@ class DalvikTypeListItem:
     @classmethod
     def from_raw_item(cls, raw_item: DalvikTypeList, types: list[DalvikTypeItem]) -> DalvikTypeListItem:
         """
-        Create a ``DalvikTypeListItem`` from a ``DalvikTypeList``
+        Create a ``DalvikTypeListItem`` from a ``DalvikTypeList``.
 
         Args:
             DalvikTypeList raw_item: The ``DalvikTypeList`` instance that will contain the data of
@@ -525,7 +525,7 @@ class DalvikProtoIDItem:
         parameters: DalvikTypeListItem | None,
     ) -> DalvikProtoIDItem:
         """
-        Create a ``DalvikProtoIDItem`` from a ``DalvikProtoID``
+        Create a ``DalvikProtoIDItem`` from a ``DalvikProtoID``.
 
         Args:
             DalvikProto raw_item: The ``DalvikProtoID`` instance that will contain the data of this item.
