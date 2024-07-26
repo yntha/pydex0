@@ -162,6 +162,14 @@ class DalvikHeaderItem:
 
         return cls(raw_item, version, checksum, signature, file_size, byte_order)
 
+    def __str__(self) -> str:
+        return (
+            f"Version: {self.version},\n"
+            f"File Size: {self.file_size},\n"
+            f"Checksum: {self.checksum},\n"
+            f"Signature: {self.signature.hex()}"
+        )
+
 
 @dataclass
 class DalvikStringID(DalvikRawItem):
@@ -493,6 +501,9 @@ class DalvikTypeListItem:
         referenced_types = [types[type_id.id_number] for type_id in raw_item.entries]
 
         return cls(raw_item, referenced_types)
+
+    def __str__(self) -> str:
+        return ", ".join(str(type_item) for type_item in self.types)
 
 
 @dataclass
