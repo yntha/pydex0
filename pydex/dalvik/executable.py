@@ -49,6 +49,26 @@ class DexFile:
     specific section has been parsed already. This prevents the parser from
     re-parsing the same section multiple times.
 
+    .. admonition:: Note
+        :class: note
+
+        This class allows you to parse individual sections of the DEX file. This is useful when you only need to
+        interact with a specific section of the DEX file and don't want to parse the entire file, for example, when
+        you only need to access the strings in the DEX file:
+
+        .. code-block:: python
+
+            >>> from pydex.dalvik import DexFile
+            >>> dex = DexFile.from_path("path/to/dex/file.dex")
+            >>> types = dex.parse_types()
+            >>> for dalvik_type in types:
+            ...     type_str = str(dalvik_type)
+            ...     if type_str.startswith("Ljava/"):
+            ...         continue  # skip standard Java types
+            ...     print(type_str)
+
+        If you wish to parse the entire DEX file, you can use the :meth:`~pydex.dalvik.DexFile.parse_dex` method.
+
     :param data: The raw bytes of the dex file.
     :param no_lazy_load: A flag that indicates whether lazy loading should be disabled.
     """
