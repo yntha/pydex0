@@ -548,3 +548,69 @@ class DalvikProtoIDItem:
         param_list = ", ".join(str(param) for param in self.parameters.types)
 
         return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value}"
+
+
+@dataclass
+class DalvikField(DalvikRawItem):
+    """
+    A dataclass that represents a ``field_id_item`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::field_id_item <https://source.android.com/docs/core/runtime/dex-format#field-id-item>`_
+    """
+
+    struct_size: ClassVar[int] = 0x08
+
+    #: Index into the ``type_ids`` list for the definer of this field.
+    class_idx: int  # 2 bytes
+
+    #: Index into the ``type_ids`` list for the type of this field.
+    type_idx: int  # 2 bytes
+
+    #: Index into the ``string_ids`` list for the name of this field.
+    name_idx: int  # 4 bytes
+
+    #: The index number of this field. This field is not part of the dex file format.
+    id_number: int
+
+
+@dataclass
+class DalvikFieldItem:
+    """
+    A dataclass that represents a high-level field item in a dex file.
+    """
+
+    #: The raw ``field_id_item``.
+    raw_item: DalvikField
+
+    #: The class this field belongs to.
+    class_def: DalvikTypeItem
+
+    #: The type of the field.
+    type: DalvikTypeItem
+
+    #: The name of the field.
+    name: DalvikStringItem
+
+    @classmethod
+    def from_raw_item(
+        cls,
+        raw_item: DalvikField,
+        types: list[DalvikTypeItem],
+        strings: list[DalvikStringItem],
+    ) -> DalvikFieldItem:
+        """
+        Create a ``DalvikFieldItem`` from a ``DalvikField``
+
+        Args:
+            DalvikField raw_item: The DalvikField that will contain the data of this item.
+            list[DalvikTypeItem] types: The list of type items.
+            list[DalvikStringItem] strings: The list of string items.
+        """
+
+        return cls(raw_item, types[raw_item.class_idx], types[raw_item.type_idx], strings[raw_item.name_idx])
+
+    def __str__(self) -> str:
+        return f"{self.class_def}->{self.name}:{self.type}"
