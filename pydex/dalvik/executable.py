@@ -672,6 +672,16 @@ class DexFile:
 
         return methods
 
+    async def parse_methods_async(self) -> list[DalvikMethodItem]:
+        """Collect all the dalvik method items asynchronously.
+
+        This function collects all the dalvik method items in this DEX file and returns them as a
+        list of :class:`~pydex.dalvik.models.DalvikMethodItem`. A clone stream is used so to not
+        alter the DEX file stream.
+        """
+
+        return await asyncio.to_thread(self.parse_methods)
+
     @requires_section(FLAG_PARSED_STRINGS)
     def load_all_strings(self) -> list[DalvikStringItem]:
         """Load all the dalvik string items.
