@@ -696,3 +696,71 @@ class DalvikMethodItem:
 
     def __str__(self) -> str:
         return f"{self.class_def}->{self.name}{self.proto}"
+
+
+@dataclass
+class DalvikClassDef(DalvikRawItem):
+    """
+    A dataclass that represents a ``class_def_item`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::class_def_item <https://source.android.com/docs/core/runtime/dex-format#class-def-item>`_
+    """
+
+    struct_size: ClassVar[int] = 0x20
+
+    #: Index into the ``type_ids`` list for this class.
+    class_idx: int  # 4 bytes
+
+    #: Access flags for the class (public, final, etc.).
+    access_flags: int  # 4 bytes
+
+    #: Index into the ``type_ids`` list for the superclass, or the constant value ``NO_INDEX`` if this class has no
+    #: superclass (i.e., it is a root class such as Object).
+    superclass_idx: int  # 4 bytes
+
+    #: Offset from the start of the file to the list of interfaces, or 0 if there are none.
+    interfaces_off: int  # 4 bytes
+
+    #: Index into the ``string_ids`` list for the name of the file containing the original source for (at least most of)
+    #: this class, or the special value ``NO_INDEX`` to represent a lack of this information.
+    source_file_idx: int  # 4 bytes
+
+    #: Offset from the start of the file to the annotations structure for this class, or 0 if there are no annotations
+    #: on this class.
+    annotations_off: int  # 4 bytes
+
+    #: Offset from the start of the file to the associated class data for this class, or 0 if there is no class data for
+    #: this class.
+    class_data_off: int  # 4 bytes
+
+    #: Offset from the start of the file to the list of static values for this class, or 0 if there are none (and all
+    #: static fields are to be initialized with 0 or null).
+    static_values_off: int  # 4 bytes
+
+    #: The index number of this class. This field is not part of the dex file format.
+    id_number: int
+
+
+@dataclass
+class DalvikClassDefItem:
+    """
+    A dataclass that represents a high-level ``class_def_item`` in a dex file.
+    """
+
+    #: The raw ``class_def_item``.
+    raw_item: DalvikClassDef
+
+    #: The class type.
+    class_type: DalvikTypeItem
+
+    #: The superclass of the class.
+    superclass: DalvikTypeItem
+
+    #: The source file of the class.
+    source_file: DalvikStringItem
+
+    #: The list of interfaces implemented by the class.
+    interfaces: DalvikTypeListItem | None
