@@ -162,6 +162,14 @@ class DalvikHeaderItem:
 
         return cls(raw_item, version, checksum, signature, file_size, byte_order)
 
+    def __str__(self) -> str:
+        return (
+            f"Version: {self.version},\n"
+            f"File Size: {self.file_size},\n"
+            f"Checksum: {self.checksum},\n"
+            f"Signature: {self.signature.hex()}"
+        )
+
 
 @dataclass
 class DalvikStringID(DalvikRawItem):
@@ -494,6 +502,9 @@ class DalvikTypeListItem:
 
         return cls(raw_item, referenced_types)
 
+    def __str__(self) -> str:
+        return ", ".join(str(type_item) for type_item in self.types)
+
 
 @dataclass
 class DalvikProtoIDItem:
@@ -545,9 +556,12 @@ class DalvikProtoIDItem:
         return cls(raw_item, shorty, return_type, parameters, string_list)
 
     def __str__(self) -> str:
-        param_list = ", ".join(str(param) for param in self.parameters.types)
+        if self.parameters is not None:
+            param_list = ", ".join(str(param) for param in self.parameters.types)
+        else:
+            param_list = ""
 
-        return f"{self.shorty.value}({param_list}){self.return_type.descriptor.value}"
+        return f"({param_list}){self.return_type.descriptor.value}"
 
 
 @dataclass
@@ -614,3 +628,71 @@ class DalvikFieldItem:
 
     def __str__(self) -> str:
         return f"{self.class_def}->{self.name}:{self.type}"
+
+
+@dataclass
+class DalvikMethod(DalvikRawItem):
+    """
+    A dataclass that represents a ``method_id_item`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::method_id_item <https://source.android.com/docs/core/runtime/dex-format#method-id-item>`_
+    """
+
+    struct_size: ClassVar[int] = 0x08
+
+    #: Index into the ``type_ids`` list for the definer of this method.
+    class_idx: int  # 2 bytes
+
+    #: Index into the ``proto_ids`` list for the prototype of this method.
+    proto_idx: int  # 2 bytes
+
+    #: Index into the ``string_ids`` list for the name of this method.
+    name_idx: int  # 4 bytes
+
+    #: The index number of this method. This field is not part of the dex file format.
+    id_number: int
+
+
+@dataclass
+class DalvikMethodItem:
+    """
+    A dataclass that represents a high-level ``method_id_item`` in a dex file.
+    """
+
+    #: The raw ``method_id_item``.
+    raw_item: DalvikMethod
+
+    #: The class this method belongs to.
+    class_def: DalvikTypeItem
+
+    #: The prototype of the method.
+    proto: DalvikProtoIDItem
+
+    #: The name of the method.
+    name: DalvikStringItem
+
+    @classmethod
+    def from_raw_item(
+        cls,
+        raw_item: DalvikMethod,
+        types: list[DalvikTypeItem],
+        protos: list[DalvikProtoIDItem],
+        strings: list[DalvikStringItem],
+    ) -> DalvikMethodItem:
+        """
+        Create a ``DalvikMethodItem`` from a ``DalvikMethod``.
+
+        Args:
+            DalvikMethod raw_item: The ``DalvikMethod`` instance that will contain the data of this item.
+            list[DalvikTypeItem] types: The list of type items.
+            list[DalvikProtoIDItem] protos: The list of prototype items.
+            list[DalvikStringItem] strings: The list of string items.
+        """
+
+        return cls(raw_item, types[raw_item.class_idx], protos[raw_item.proto_idx], strings[raw_item.name_idx])
+
+    def __str__(self) -> str:
+        return f"{self.class_def}->{self.name}{self.proto}"

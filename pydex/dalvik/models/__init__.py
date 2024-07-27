@@ -19,6 +19,8 @@ from pydex.dalvik.models.dalvik import (
     DalvikTypeListItem,
     DalvikField,
     DalvikFieldItem,
+    DalvikMethod,
+    DalvikMethodItem,
 )
 
 
