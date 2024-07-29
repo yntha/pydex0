@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import enum
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 from datastream import ByteOrder, DeserializingStream
+
+from pydex.dalvik.models.base import DalvikRawItem
+from pydex.util import sizeof_uleb128
 
 
 class DalvikValueFormats(enum.IntEnum):
@@ -159,3 +163,94 @@ class DalvikValueFormats(enum.IntEnum):
         ``value`` format: `(none)`
         ``description``: one-bit value, 0 for ``false`` and 1 for ``true``. The bit is represented in the ``value_arg``.
     """
+
+
+@dataclass
+class DalvikEncodedValue(DalvikRawItem):
+    """
+    A dataclass that represents an encoded value in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex::encoded_value <https://source.android.com/docs/core/runtime/dex-format#encoding>`_
+    """
+
+    value: Any = field(init=False)
+
+    def __post_init__(self):
+        self.value = self.decode_value()
+
+    def decode_value(self) -> Any:
+        """Decode the encoded value based on the value format."""
+        stream = DeserializingStream(self.data, byteorder=ByteOrder.LITTLE_ENDIAN)
+
+        value_id = stream.read_uint8()
+        value_format = DalvikValueFormats(value_id & 0x1F)
+        value_arg = value_format >> 5
+
+        if value_format == DalvikValueFormats.VALUE_BYTE:
+            return stream.read_int8()
+        elif value_format == DalvikValueFormats.VALUE_SHORT:
+            return stream.read_int16()
+        elif value_format == DalvikValueFormats.VALUE_CHAR:
+            return stream.read_uint16()
+        elif value_format == DalvikValueFormats.VALUE_INT:
+            return stream.read_int32()
+        elif value_format == DalvikValueFormats.VALUE_LONG:
+            return stream.read_int64()
+        elif value_format == DalvikValueFormats.VALUE_FLOAT:
+            return stream.read_float()
+        elif value_format == DalvikValueFormats.VALUE_DOUBLE:
+            return stream.read_double()
+        elif value_format == DalvikValueFormats.VALUE_METHOD_TYPE:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_METHOD_HANDLE:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_STRING:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_TYPE:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_FIELD:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_METHOD:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_ENUM:
+            return stream.read_uint32()
+        elif value_format == DalvikValueFormats.VALUE_ARRAY:
+            return DalvikEncodedArray.from_stream(stream)
+        elif value_format == DalvikValueFormats.VALUE_ANNOTATION:
+            return DalvikEncodedAnnotation.from_stream(stream)
+        elif value_format == DalvikValueFormats.VALUE_NULL:
+            return None
+        elif value_format == DalvikValueFormats.VALUE_BOOLEAN:
+            return bool(value_arg)
+
+    @classmethod
+    def from_stream(cls, stream: DeserializingStream) -> DalvikEncodedValue:
+        offset = stream.tell()
+        value_id = stream.read_uint8()
+        value_format = DalvikValueFormats(value_id & 0x1F)
+
+        # use a clone stream to read the sizes
+        clone_stream = stream.clone()
+
+        if value_format == DalvikValueFormats.VALUE_ARRAY:
+            # only read the size of the encoded element
+            size = clone_stream.read_uleb128()
+        elif value_format == DalvikValueFormats.VALUE_ANNOTATION:
+            # type_idx.size + size
+            size = sizeof_uleb128(clone_stream.read_uleb128()) + clone_stream.read_uleb128()
+        else:
+            size = (value_id >> 5) + 1  # value_arg + 1 is the size of the encoded value
+
+        total_size = size + 1  # + 1 for value_id
+        total_data = clone_stream.seekpeek(offset, total_size)
+
+        clone_stream.close()
+
+        return cls(
+            offset,
+            total_size,
+            total_data,
+        )
