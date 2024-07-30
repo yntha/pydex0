@@ -165,6 +165,12 @@ the low-level classes.
 
 ----
 
+.. autoclass:: DalvikValueFormats
+    :members:
+    :exclude-members: __new__
+
+----
+
 .. autoclass:: DalvikHeader
     :members:
     :show-inheritance:

@@ -22,6 +22,7 @@ from pydex.dalvik.models.dalvik import (
     DalvikMethod,
     DalvikMethodItem,
 )
+from pydex.dalvik.models.encoded_items import DalvikValueFormats
 
 
 class ModelEncoder(json.JSONEncoder):
