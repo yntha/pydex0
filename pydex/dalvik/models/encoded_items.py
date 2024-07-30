@@ -228,12 +228,16 @@ class DalvikEncodedValue(DalvikRawItem):
 
     @classmethod
     def from_stream(cls, stream: DeserializingStream) -> DalvikEncodedValue:
-        offset = stream.tell()
-        value_id = stream.read_uint8()
-        value_format = DalvikValueFormats(value_id & 0x1F)
+        """Read an encoded value from a stream.
 
-        # use a clone stream to read the sizes
+        Args:
+            DeserializingStream stream: The stream to read from.
+        """
         clone_stream = stream.clone()
+
+        offset = clone_stream.tell()
+        value_id = clone_stream.read_uint8()
+        value_format = DalvikValueFormats(value_id & 0x1F)
 
         if value_format == DalvikValueFormats.VALUE_ARRAY:
             # only read the size of the encoded element
@@ -248,9 +252,6 @@ class DalvikEncodedValue(DalvikRawItem):
         total_data = clone_stream.seekpeek(offset, total_size)
 
         clone_stream.close()
-
-        # advance the stream to the end of the encoded value
-        stream.seek(offset + total_size)
 
         return cls(
             offset,
