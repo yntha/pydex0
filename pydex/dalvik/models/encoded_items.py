@@ -249,6 +249,9 @@ class DalvikEncodedValue(DalvikRawItem):
 
         clone_stream.close()
 
+        # advance the stream to the end of the encoded value
+        stream.seek(offset + total_size)
+
         return cls(
             offset,
             total_size,
