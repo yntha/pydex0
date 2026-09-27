@@ -742,10 +742,10 @@ class DalvikClassDefItem:
     class_type: DalvikTypeItem
 
     #: The superclass of the class.
-    superclass: DalvikTypeItem
+    superclass: DalvikTypeItem | None
 
     #: The source file of the class.
-    source_file: DalvikStringItem
+    source_file: DalvikStringItem | LazyDalvikString | None
 
     #: The list of interfaces implemented by the class.
     interfaces: DalvikTypeListItem | None

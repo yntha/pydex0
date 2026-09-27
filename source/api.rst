@@ -259,6 +259,17 @@ the low-level classes.
 
 ----
 
+.. autoclass:: DalvikClassDef
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikClassDefItem
+    :members:
+
+----
+
 .. autoclass:: DalvikAnnotationVisibility
     :members:
     :exclude-members: __new__
