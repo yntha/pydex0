@@ -113,3 +113,59 @@ class DalvikAnnotationSet(DalvikRawItem):
             return cls(offset, size, data, length, entries)
         finally:
             clone_stream.close()
+
+
+@dataclass
+class DalvikAnnotationSetRefList(DalvikRawItem):
+    """
+    A dataclass that represents an ``annotation_set_ref_list`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::annotation_set_ref_list <https://source.android.com/docs/core/runtime/dex-format#annotation-set-ref-list>`_
+    """
+
+    #: Size of the list, in entries.
+    length: int  # 4 bytes
+
+    #: Elements of the list.
+    entries: list[DalvikAnnotationSet | None]
+
+    @classmethod
+    def from_stream(cls, stream: DeserializingStream) -> DalvikAnnotationSetRefList:
+        """Read an annotation set reference list from a stream.
+
+        Args:
+            DeserializingStream stream: The stream to read from.
+        """
+        clone_stream = stream.clone()
+        clone_stream.seek(stream.tell())
+
+        try:
+            offset = clone_stream.tell()
+            length = clone_stream.read_uint32()
+            if length > clone_stream.remaining() // 4:
+                raise ValueError("Corrupted annotation set reference list")
+
+            annotation_offsets = []
+            for _ in range(length):
+                annotation_offsets.append(clone_stream.read_uint32())
+
+            size = clone_stream.tell() - offset
+            data = clone_stream.seekpeek(offset, size)
+            entries = []
+
+            for annotations_off in annotation_offsets:
+                if annotations_off == 0:
+                    entries.append(None)
+                    continue
+                if annotations_off >= clone_stream.size():
+                    raise ValueError("Invalid annotation set offset")
+
+                clone_stream.seek(annotations_off)
+                entries.append(DalvikAnnotationSet.from_stream(clone_stream))
+
+            return cls(offset, size, data, length, entries)
+        finally:
+            clone_stream.close()

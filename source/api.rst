@@ -274,3 +274,9 @@ the low-level classes.
 .. autoclass:: DalvikAnnotationSet
     :members:
     :show-inheritance:
+
+----
+
+.. autoclass:: DalvikAnnotationSetRefList
+    :members:
+    :show-inheritance:
