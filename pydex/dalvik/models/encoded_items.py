@@ -187,36 +187,50 @@ class DalvikEncodedValue(DalvikRawItem):
 
         value_id = stream.read_uint8()
         value_format = DalvikValueFormats(value_id & 0x1F)
-        value_arg = value_format >> 5
+        value_arg = value_id >> 5
+        data = b""
+
+        if value_format not in (
+            DalvikValueFormats.VALUE_ARRAY,
+            DalvikValueFormats.VALUE_ANNOTATION,
+            DalvikValueFormats.VALUE_NULL,
+            DalvikValueFormats.VALUE_BOOLEAN,
+        ):
+            size = value_arg + 1
+            data = stream.read(size)
+            if len(data) != size:
+                raise ValueError("Corrupted encoded value")
 
         if value_format == DalvikValueFormats.VALUE_BYTE:
-            return stream.read_int8()
+            return int.from_bytes(data, "little", signed=True)
         elif value_format == DalvikValueFormats.VALUE_SHORT:
-            return stream.read_int16()
+            return int.from_bytes(data, "little", signed=True)
         elif value_format == DalvikValueFormats.VALUE_CHAR:
-            return stream.read_uint16()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_INT:
-            return stream.read_int32()
+            return int.from_bytes(data, "little", signed=True)
         elif value_format == DalvikValueFormats.VALUE_LONG:
-            return stream.read_int64()
+            return int.from_bytes(data, "little", signed=True)
         elif value_format == DalvikValueFormats.VALUE_FLOAT:
+            stream.set(data.rjust(4, b"\x00"))
             return stream.read_float()
         elif value_format == DalvikValueFormats.VALUE_DOUBLE:
+            stream.set(data.rjust(8, b"\x00"))
             return stream.read_double()
         elif value_format == DalvikValueFormats.VALUE_METHOD_TYPE:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_METHOD_HANDLE:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_STRING:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_TYPE:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_FIELD:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_METHOD:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_ENUM:
-            return stream.read_uint32()
+            return int.from_bytes(data, "little", signed=False)
         elif value_format == DalvikValueFormats.VALUE_ARRAY:
             return DalvikEncodedArray.from_stream(stream)
         elif value_format == DalvikValueFormats.VALUE_ANNOTATION:
@@ -234,6 +248,7 @@ class DalvikEncodedValue(DalvikRawItem):
             DeserializingStream stream: The stream to read from.
         """
         clone_stream = stream.clone()
+        clone_stream.seek(stream.tell())
 
         offset = clone_stream.tell()
         value_id = clone_stream.read_uint8()
@@ -245,6 +260,8 @@ class DalvikEncodedValue(DalvikRawItem):
         elif value_format == DalvikValueFormats.VALUE_ANNOTATION:
             # type_idx.size + size
             size = sizeof_uleb128(clone_stream.read_uleb128()) + clone_stream.read_uleb128()
+        elif value_format in (DalvikValueFormats.VALUE_NULL, DalvikValueFormats.VALUE_BOOLEAN):
+            size = 0
         else:
             size = (value_id >> 5) + 1  # value_arg + 1 is the size of the encoded value
 
@@ -258,3 +275,73 @@ class DalvikEncodedValue(DalvikRawItem):
             total_size,
             total_data,
         )
+
+
+@dataclass
+class DalvikEncodedArray(DalvikRawItem):
+    """
+    A dataclass that represents an ``encoded_array`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex::encoded_array <https://source.android.com/docs/core/runtime/dex-format#encoded-array>`_
+    """
+
+    length: int  # uleb128
+
+    values: list[DalvikEncodedValue]
+
+    @classmethod
+    def from_stream(cls, stream: DeserializingStream) -> DalvikEncodedArray:
+        offset = stream.tell()
+        length = stream.read_uleb128()
+
+        values = []
+
+        for _ in range(length):
+            value = DalvikEncodedValue.from_stream(stream)
+
+            values.append(value)
+            stream.seek(value.offset + value.size)
+
+        size = stream.tell() - offset
+        data = stream.seekpeek(offset, size)
+
+        return cls(offset, size, data, length, values)
+
+    def __str__(self) -> str:
+        return f"EncodedArray(offset={self.offset}, size={self.size}, values={self.values})"
+
+
+@dataclass
+class DalvikEncodedAnnotation(DalvikRawItem):
+    """
+    A dataclass that represents an encoded annotation in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex::encoded_annotation <https://source.android.com/docs/core/runtime/dex-format#encoded-annotation>`_
+    """
+
+    type_idx: int
+
+    size: int  # uleb128
+
+    elements: list
+
+    @classmethod
+    def from_stream(cls, stream: DeserializingStream) -> DalvikEncodedAnnotation:
+        offset = stream.tell()
+        type_idx = stream.read_uleb128()
+        size = stream.read_uleb128()
+        elements = []
+
+        for _ in range(size):
+            name_idx = stream.read_uleb128()
+            value = DalvikEncodedValue.from_stream(stream)
+
+            elements.append((name_idx, value))
+
+        return cls(offset, type_idx, size, elements, stream.read(stream.tell() - offset))

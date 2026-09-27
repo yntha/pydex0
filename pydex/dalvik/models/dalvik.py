@@ -7,24 +7,9 @@ from typing import ClassVar
 
 from datastream import ByteOrder, DeserializingStream
 
+from pydex.dalvik.models.base import DalvikRawItem
 from pydex.util import sizeof_uleb128
 from pydex.exc import InvalidDalvikHeader
-
-
-@dataclass
-class DalvikRawItem:
-    """
-    A dataclass that represents a low-level item in a dex file.
-    """
-
-    #: The offset of the item in the dex file.
-    offset: int
-
-    #: The size of the item in the dex file.
-    size: int
-
-    #: The raw data of the item.
-    data: bytes
 
 
 @dataclass

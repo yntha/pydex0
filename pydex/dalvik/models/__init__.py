@@ -3,8 +3,8 @@ import json
 from dataclasses import asdict
 from typing import Any, cast
 
+from pydex.dalvik.models.base import DalvikRawItem
 from pydex.dalvik.models.dalvik import (
-    DalvikRawItem,
     DalvikHeader,
     DalvikHeaderItem,
     DalvikStringItem,
