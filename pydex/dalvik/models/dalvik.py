@@ -9,6 +9,7 @@ from datastream import ByteOrder, DeserializingStream
 
 from pydex.dalvik.models.base import DalvikRawItem
 from pydex.dalvik.models.annotations import DalvikAnnotationsDirectory
+from pydex.dalvik.models.encoded_items import DalvikEncodedArray
 from pydex.util import sizeof_uleb128
 from pydex.exc import InvalidDalvikHeader
 
@@ -753,3 +754,6 @@ class DalvikClassDefItem:
 
     #: The annotations for the class.
     annotations: DalvikAnnotationsDirectory | None = None
+
+    #: List of initial values for static fields.
+    static_values: DalvikEncodedArray | None = None

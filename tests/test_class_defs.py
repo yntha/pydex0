@@ -35,6 +35,15 @@ def test_class_def_parse():
     assert item.raw_item.annotations_off == 0
     assert item.raw_item.class_data_off == 486
     assert item.raw_item.static_values_off == 430
+    assert item.static_values is not None
+    assert item.static_values.offset == 430
+    assert item.static_values.size == 6
+    assert item.static_values.data == dex.data[430:436]
+    assert item.static_values.length == 2
+    assert item.static_values.values[0].offset == 431
+    assert item.static_values.values[0].value == 4628
+    assert item.static_values.values[1].offset == 434
+    assert item.static_values.values[1].value == 1
     assert dex.section_flags & dex.FLAG_PARSED_CLASS_DEFS != 0
 
     dex.stream.seek(12)
@@ -51,6 +60,8 @@ def test_class_def_parse_async():
     assert items[0].superclass is dex.types[1]
     assert isinstance(items[0].source_file, LazyDalvikString)
     assert items[0].source_file.load(dex.stream).value == "klass.java"
+    assert items[0].static_values is not None
+    assert items[0].static_values.values[0].value == 4628
     assert dex.section_flags & dex.FLAG_PARSED_CLASS_DEFS != 0
 
 
@@ -173,6 +184,52 @@ def test_class_def_invalid_annotations_offset():
     dex.stream.seek(12)
 
     with pytest.raises(ValueError, match="Invalid annotations directory offset"):
+        dex.parse_class_defs()
+
+    assert dex.stream.tell() == 12
+    assert dex.section_flags & dex.FLAG_PARSED_CLASS_DEFS == 0
+
+
+def test_class_def_missing_static_values():
+    data = bytearray(get_test_dex())
+    data[276:280] = b"\x00\x00\x00\x00"
+    data[12:32] = hashlib.sha1(data[32:]).digest()
+    data[8:12] = zlib.adler32(data[12:]).to_bytes(4, "little")
+
+    dex = DexFile(bytes(data), no_lazy_load=True).parse_dex()
+
+    assert dex.class_defs[0].static_values is None
+
+
+def test_class_def_invalid_static_values_offset():
+    data = bytearray(get_test_dex())
+    data[276:280] = len(data).to_bytes(4, "little")
+    data[12:32] = hashlib.sha1(data[32:]).digest()
+    data[8:12] = zlib.adler32(data[12:]).to_bytes(4, "little")
+
+    dex = DexFile(bytes(data))
+    dex.types = dex.parse_types()
+    dex.stream.seek(12)
+
+    with pytest.raises(ValueError, match="Invalid static values offset"):
+        dex.parse_class_defs()
+
+    assert dex.stream.tell() == 12
+    assert dex.section_flags & dex.FLAG_PARSED_CLASS_DEFS == 0
+
+
+def test_class_def_truncated_static_values():
+    data = bytearray(get_test_dex())
+    data[276:280] = (len(data) - 2).to_bytes(4, "little")
+    data[-2:] = b"\x01\x04"
+    data[12:32] = hashlib.sha1(data[32:]).digest()
+    data[8:12] = zlib.adler32(data[12:]).to_bytes(4, "little")
+
+    dex = DexFile(bytes(data))
+    dex.types = dex.parse_types()
+    dex.stream.seek(12)
+
+    with pytest.raises(ValueError, match="Corrupted encoded value"):
         dex.parse_class_defs()
 
     assert dex.stream.tell() == 12

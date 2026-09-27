@@ -11,6 +11,7 @@ from functools import wraps
 from datastream import DeserializingStream, ByteOrder
 
 from pydex.dalvik.models.annotations import DalvikAnnotationsDirectory
+from pydex.dalvik.models.encoded_items import DalvikEncodedArray
 from pydex.dalvik.models.dalvik import (
     DalvikHeader,
     DalvikHeaderItem,
@@ -773,6 +774,15 @@ class DexFile:
                 else:
                     annotations = None
 
+                if static_values_off != 0:
+                    if static_values_off >= clonestream.size():
+                        raise ValueError("Invalid static values offset")
+
+                    clonestream.seek(static_values_off)
+                    static_values = DalvikEncodedArray.from_stream(clonestream)
+                else:
+                    static_values = None
+
                 class_defs.append(
                     DalvikClassDefItem(
                         DalvikClassDef(
@@ -794,6 +804,7 @@ class DexFile:
                         source_file=source_file,
                         interfaces=interfaces,
                         annotations=annotations,
+                        static_values=static_values,
                     )
                 )
 
