@@ -346,3 +346,43 @@ class DalvikEncodedAnnotation(DalvikRawItem):
         data = stream.seekpeek(offset, size)
 
         return cls(offset, size, data, type_idx, length, elements)
+
+
+@dataclass
+class DalvikEncodedField(DalvikRawItem):
+    """
+    A dataclass that represents an ``encoded_field`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::encoded_field <https://source.android.com/docs/core/runtime/dex-format#encoded-field>`_
+    """
+
+    #: Index into the ``field_ids`` list for the identity of this field, represented as a difference
+    #: from the index of previous element in the list.
+    field_idx_diff: int  # uleb128
+
+    #: Access flags for the field.
+    access_flags: int  # uleb128
+
+    @classmethod
+    def from_stream(cls, stream: DeserializingStream) -> DalvikEncodedField:
+        """Read an encoded field from a stream.
+
+        Args:
+            DeserializingStream stream: The stream to read from.
+        """
+        clone_stream = stream.clone()
+        clone_stream.seek(stream.tell())
+
+        try:
+            offset = clone_stream.tell()
+            field_idx_diff = clone_stream.read_uleb128()
+            access_flags = clone_stream.read_uleb128()
+            size = clone_stream.tell() - offset
+            data = clone_stream.seekpeek(offset, size)
+
+            return cls(offset, size, data, field_idx_diff, access_flags)
+        finally:
+            clone_stream.close()

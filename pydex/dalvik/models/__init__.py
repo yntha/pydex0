@@ -24,7 +24,7 @@ from pydex.dalvik.models.dalvik import (
     DalvikClassDef,
     DalvikClassDefItem,
 )
-from pydex.dalvik.models.encoded_items import DalvikValueFormats
+from pydex.dalvik.models.encoded_items import DalvikValueFormats, DalvikEncodedField
 from pydex.dalvik.models.annotations import (
     DalvikAnnotation,
     DalvikAnnotationVisibility,

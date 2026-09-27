@@ -315,3 +315,9 @@ the low-level classes.
 .. autoclass:: DalvikAnnotationsDirectory
     :members:
     :show-inheritance:
+
+----
+
+.. autoclass:: DalvikEncodedField
+    :members:
+    :show-inheritance:
