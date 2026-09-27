@@ -19,8 +19,12 @@ def test_proto_parse():
     # method proto
     assert protos[1].shorty.value == "VL"
     assert protos[1].return_type.descriptor.value == "V"
+    assert protos[1].parameters is not None
     assert protos[1].parameters.types[0].descriptor.value == "Ljava/lang/Object;"
     assert protos[1].parameter_list == ["Ljava/lang/Object;"]
+    assert protos[1].parameters.raw_item.length == 1
+    assert protos[1].parameters.raw_item.size == 6
+    assert protos[1].parameters.raw_item.data == b"\x01\x00\x00\x00\x01\x00"
 
 
 def test_proto_parse_lazy_strings():

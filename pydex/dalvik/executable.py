@@ -533,13 +533,13 @@ class DexFile:
                 for j in range(length):
                     entries.append(self.types[clonestream.read_uint16()].raw_item)
 
-                list_size = len(entries) * DalvikTypeID.struct_size
+                list_size = clonestream.tell() - parameters_off
 
                 param_type_list = DalvikTypeListItem.from_raw_item(
                     DalvikTypeList(
                         offset=parameters_off,
-                        size=list_size + 4,
-                        data=self.data[parameters_off : parameters_off + 4 + list_size],
+                        size=list_size,
+                        data=self.data[parameters_off : parameters_off + list_size],
                         length=length,
                         entries=entries,
                     ),
