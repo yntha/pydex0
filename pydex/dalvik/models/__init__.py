@@ -23,6 +23,7 @@ from pydex.dalvik.models.dalvik import (
     DalvikMethodItem,
 )
 from pydex.dalvik.models.encoded_items import DalvikValueFormats
+from pydex.dalvik.models.annotations import DalvikAnnotation, DalvikAnnotationVisibility
 
 
 class ModelEncoder(json.JSONEncoder):

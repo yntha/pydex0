@@ -256,3 +256,15 @@ the low-level classes.
 
 .. autoclass:: DalvikMethodItem
     :members:
+
+----
+
+.. autoclass:: DalvikAnnotationVisibility
+    :members:
+    :exclude-members: __new__
+
+----
+
+.. autoclass:: DalvikAnnotation
+    :members:
+    :show-inheritance:
