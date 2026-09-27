@@ -2,7 +2,7 @@ import pytest
 
 from datastream import ByteOrder, DeserializingStream
 
-from pydex.dalvik.models import DalvikAnnotation, DalvikAnnotationVisibility
+from pydex.dalvik.models import DalvikAnnotation, DalvikAnnotationVisibility, DalvikAnnotationSet
 
 
 def test_annotation_parse():
@@ -61,5 +61,84 @@ def test_annotation_truncated_value():
 
     with pytest.raises(ValueError, match="Corrupted encoded value"):
         DalvikAnnotation.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotation_set_parse():
+    data = (
+        b"\x00\x00\x00\x00"
+        b"\x02\x00\x00\x00\x18\x00\x00\x00\x10\x00\x00\x00"
+        b"\x02\x05\x00"
+        b"\x00\x00\x00\x00\x00"
+        b"\x01\x02\x01\x03\x04\x2a"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    stream.seek(4)
+
+    item = DalvikAnnotationSet.from_stream(stream)
+
+    assert item.offset == 4
+    assert item.size == 12
+    assert item.data == data[4:16]
+    assert item.length == 2
+
+    # ensure entries follow the offset table, not their order in the file
+    assert item.entries[0].offset == 24
+    assert item.entries[0].visibility is DalvikAnnotationVisibility.VISIBILITY_RUNTIME
+    assert item.entries[0].annotation.type_idx == 2
+    assert item.entries[0].annotation.elements[0][1].value == 42
+
+    assert item.entries[1].offset == 16
+    assert item.entries[1].visibility is DalvikAnnotationVisibility.VISIBILITY_SYSTEM
+    assert item.entries[1].annotation.type_idx == 5
+    assert item.entries[1].annotation.elements == []
+    assert stream.tell() == 4
+
+
+def test_empty_annotation_set_parse():
+    stream = DeserializingStream(b"\x00\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+    item = DalvikAnnotationSet.from_stream(stream)
+
+    assert item.offset == 0
+    assert item.size == 4
+    assert item.data == b"\x00\x00\x00\x00"
+    assert item.length == 0
+    assert item.entries == []
+    assert stream.tell() == 0
+
+
+def test_annotation_set_byte_order():
+    stream = DeserializingStream(b"\x00\x00\x00\x01\x00\x00\x00\x08\x01\x02\x00", ByteOrder.BIG_ENDIAN)
+    item = DalvikAnnotationSet.from_stream(stream)
+
+    assert item.size == 8
+    assert item.length == 1
+    assert item.entries[0].offset == 8
+    assert item.entries[0].annotation.type_idx == 2
+    assert stream.tell() == 0
+
+
+def test_annotation_set_truncated_offsets():
+    stream = DeserializingStream(b"\x02\x00\x00\x00\x08\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Corrupted annotation set"):
+        DalvikAnnotationSet.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotation_set_invalid_offset():
+    stream = DeserializingStream(b"\x01\x00\x00\x00\x00\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid annotation offset"):
+        DalvikAnnotationSet.from_stream(stream)
+
+    assert stream.tell() == 0
+
+    stream = DeserializingStream(b"\x01\x00\x00\x00\xff\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid annotation offset"):
+        DalvikAnnotationSet.from_stream(stream)
 
     assert stream.tell() == 0
