@@ -25,6 +25,7 @@ def test_class_def_parse():
     assert str(item.superclass) == "Ljava/lang/Object;"
     assert str(item.source_file) == "klass.java"
     assert item.interfaces is None
+    assert item.annotations is None
 
     assert item.raw_item.offset == 248
     assert item.raw_item.size == 32
@@ -104,4 +105,56 @@ def test_class_def_truncated_record():
     with pytest.raises(ValueError, match="Corrupted class definition"):
         dex.parse_class_defs()
 
+    assert dex.section_flags & dex.FLAG_PARSED_CLASS_DEFS == 0
+
+
+def test_class_def_annotations():
+    data = bytearray(get_test_dex())
+    annotations_off = len(data)
+    data += (
+        b"\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00"
+        + (annotations_off + 24).to_bytes(4, "little")
+        + b"\x00\x00\x00\x00"
+    )
+    data[268:272] = annotations_off.to_bytes(4, "little")
+    data[32:36] = len(data).to_bytes(4, "little")
+    data_size = int.from_bytes(data[104:108], "little") + 28
+    data[104:108] = data_size.to_bytes(4, "little")
+    data[12:32] = hashlib.sha1(data[32:]).digest()
+    data[8:12] = zlib.adler32(data[12:]).to_bytes(4, "little")
+
+    dex = DexFile(bytes(data), no_lazy_load=True).parse_dex()
+    annotations = dex.class_defs[0].annotations
+
+    assert annotations is not None
+    assert annotations.offset == annotations_off
+    assert annotations.size == 24
+    assert annotations.data == data[annotations_off : annotations_off + 24]
+    assert annotations.class_annotations_off == 0
+    assert annotations.fields_size == 1
+    assert annotations.field_annotations[0].field_idx == 0
+    assert annotations.field_annotations[0].annotations_off == annotations_off + 24
+    assert annotations.method_annotations == []
+    assert annotations.parameter_annotations == []
+
+    dex.stream.seek(12)
+    assert dex.parse_class_defs() == dex.class_defs
+    assert dex.stream.tell() == 12
+
+
+def test_class_def_invalid_annotations_offset():
+    data = bytearray(get_test_dex())
+    data[268:272] = len(data).to_bytes(4, "little")
+    data[12:32] = hashlib.sha1(data[32:]).digest()
+    data[8:12] = zlib.adler32(data[12:]).to_bytes(4, "little")
+
+    dex = DexFile(bytes(data))
+    dex.types = dex.parse_types()
+    dex.stream.seek(12)
+
+    with pytest.raises(ValueError, match="Invalid annotations directory offset"):
+        dex.parse_class_defs()
+
+    assert dex.stream.tell() == 12
     assert dex.section_flags & dex.FLAG_PARSED_CLASS_DEFS == 0

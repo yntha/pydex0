@@ -10,6 +10,7 @@ from functools import wraps
 
 from datastream import DeserializingStream, ByteOrder
 
+from pydex.dalvik.models.annotations import DalvikAnnotationsDirectory
 from pydex.dalvik.models.dalvik import (
     DalvikHeader,
     DalvikHeaderItem,
@@ -763,6 +764,15 @@ class DexFile:
                 else:
                     interfaces = None
 
+                if annotations_off != 0:
+                    if annotations_off > clonestream.size() - 16:
+                        raise ValueError("Invalid annotations directory offset")
+
+                    clonestream.seek(annotations_off)
+                    annotations = DalvikAnnotationsDirectory.from_stream(clonestream)
+                else:
+                    annotations = None
+
                 class_defs.append(
                     DalvikClassDefItem(
                         DalvikClassDef(
@@ -783,6 +793,7 @@ class DexFile:
                         superclass=superclass,
                         source_file=source_file,
                         interfaces=interfaces,
+                        annotations=annotations,
                     )
                 )
 
