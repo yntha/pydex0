@@ -165,6 +165,12 @@ the low-level classes.
 
 ----
 
+.. autoclass:: DalvikValueFormats
+    :members:
+    :exclude-members: __new__
+
+----
+
 .. autoclass:: DalvikHeader
     :members:
     :show-inheritance:
@@ -250,3 +256,62 @@ the low-level classes.
 
 .. autoclass:: DalvikMethodItem
     :members:
+
+----
+
+.. autoclass:: DalvikClassDef
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikClassDefItem
+    :members:
+
+----
+
+.. autoclass:: DalvikAnnotationVisibility
+    :members:
+    :exclude-members: __new__
+
+----
+
+.. autoclass:: DalvikAnnotation
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikAnnotationSet
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikAnnotationSetRefList
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikFieldAnnotation
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikMethodAnnotation
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikParameterAnnotation
+    :members:
+    :show-inheritance:
+
+----
+
+.. autoclass:: DalvikAnnotationsDirectory
+    :members:
+    :show-inheritance:

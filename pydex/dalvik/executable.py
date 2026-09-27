@@ -10,6 +10,7 @@ from functools import wraps
 
 from datastream import DeserializingStream, ByteOrder
 
+from pydex.dalvik.models.annotations import DalvikAnnotationsDirectory
 from pydex.dalvik.models.dalvik import (
     DalvikHeader,
     DalvikHeaderItem,
@@ -26,6 +27,8 @@ from pydex.dalvik.models.dalvik import (
     DalvikFieldItem,
     DalvikMethod,
     DalvikMethodItem,
+    DalvikClassDef,
+    DalvikClassDefItem,
 )
 from pydex.exc import InvalidDalvikHeader
 
@@ -96,6 +99,9 @@ class DexFile:
     #: Flag that indicates the methods have been parsed.
     FLAG_PARSED_METHODS: int = 32
 
+    #: Flag that indicates the classdefs have been parsed.
+    FLAG_PARSED_CLASS_DEFS: int = 64
+
     def __init__(self, data: bytes, no_lazy_load: bool = False):
         #: The raw bytes of the dex file.
         self.data: bytes = data
@@ -126,6 +132,9 @@ class DexFile:
 
         #: The list of dalvik method items in the dex file.
         self.methods: list[DalvikMethodItem] = []
+
+        #: The list of dalvik class definitions in the dex file.
+        self.class_defs: list[DalvikClassDefItem] = []
 
     @classmethod
     def from_path(cls, path: str, no_lazy_load: bool = False) -> DexFile:
@@ -160,6 +169,7 @@ class DexFile:
                 do_protos = self.section_flags & self.FLAG_PARSED_PROTOS == 0
                 do_fields = self.section_flags & self.FLAG_PARSED_FIELDS == 0
                 do_methods = self.section_flags & self.FLAG_PARSED_METHODS == 0
+                do_class_defs = self.section_flags & self.FLAG_PARSED_CLASS_DEFS == 0
 
                 if do_header and flags & self.FLAG_PARSED_HEADER != 0:
                     self.parse_dex_prologue()
@@ -173,6 +183,8 @@ class DexFile:
                     self.fields = self.parse_fields()
                 if do_methods and flags & self.FLAG_PARSED_METHODS != 0:
                     self.methods = self.parse_methods()
+                if do_class_defs and flags & self.FLAG_PARSED_CLASS_DEFS != 0:
+                    self.class_defs = self.parse_class_defs()
 
                 return func(self, *args, **kwargs)
 
@@ -232,6 +244,9 @@ class DexFile:
 
         # collect all the dalvik method items
         self.methods = self.parse_methods()
+
+        # collect all the dalvik ClassDefs
+        self.class_defs = self.parse_class_defs()
 
         return self
 
@@ -681,6 +696,121 @@ class DexFile:
         """
 
         return await asyncio.to_thread(self.parse_methods)
+
+    @requires_section(FLAG_PARSED_TYPES)
+    def parse_class_defs(self) -> list[DalvikClassDefItem]:
+        """Collect all the dalvik ClassDefs.
+
+        This function collects and parses the ClassDefs in the DEX and returns them as a list of 
+        :class:`~pydex.dalvik.models.DalvikClassDefItem`. A clone stream is used so to not alter
+        the DEX file stream.
+        """
+
+        class_defs = []
+        clonestream = self.stream.clone()
+
+        try:
+            for i in range(self.header.raw_item.class_defs_size):
+                clonestream.seek(self.header.raw_item.class_defs_off + (i * DalvikClassDef.struct_size))
+                class_def_off = clonestream.tell()
+                if clonestream.remaining() < DalvikClassDef.struct_size:
+                    raise ValueError("Corrupted class definition")
+
+                class_idx = clonestream.read_uint32()
+                access_flags = clonestream.read_uint32()
+                superclass_idx = clonestream.read_uint32()
+                interfaces_off = clonestream.read_uint32()
+                source_file_idx = clonestream.read_uint32()
+                annotations_off = clonestream.read_uint32()
+                class_data_off = clonestream.read_uint32()
+                static_values_off = clonestream.read_uint32()
+
+                class_type = self.types[class_idx]
+
+                if superclass_idx != 0xFFFFFFFF:
+                    superclass = self.types[superclass_idx]
+                else:
+                    superclass = None
+
+                if source_file_idx != 0xFFFFFFFF:
+                    source_file = self.strings[source_file_idx]
+                else:
+                    source_file = None
+
+                if interfaces_off != 0:
+                    if interfaces_off > clonestream.size() - 4:
+                        raise ValueError("Invalid interfaces offset")
+
+                    clonestream.seek(interfaces_off)
+                    length = clonestream.read_uint32()
+                    if length > clonestream.remaining() // 2:
+                        raise ValueError("Corrupted interfaces list")
+
+                    entries = []
+                    for j in range(length):
+                        entries.append(self.types[clonestream.read_uint16()].raw_item)
+
+                    list_size = clonestream.tell() - interfaces_off
+                    interfaces = DalvikTypeListItem.from_raw_item(
+                        DalvikTypeList(
+                            offset=interfaces_off,
+                            size=list_size,
+                            data=self.data[interfaces_off : interfaces_off + list_size],
+                            length=length,
+                            entries=entries,
+                        ),
+                        self.types,
+                    )
+                else:
+                    interfaces = None
+
+                if annotations_off != 0:
+                    if annotations_off > clonestream.size() - 16:
+                        raise ValueError("Invalid annotations directory offset")
+
+                    clonestream.seek(annotations_off)
+                    annotations = DalvikAnnotationsDirectory.from_stream(clonestream)
+                else:
+                    annotations = None
+
+                class_defs.append(
+                    DalvikClassDefItem(
+                        DalvikClassDef(
+                            offset=class_def_off,
+                            size=DalvikClassDef.struct_size,
+                            data=self.data[class_def_off : class_def_off + DalvikClassDef.struct_size],
+                            class_idx=class_idx,
+                            access_flags=access_flags,
+                            superclass_idx=superclass_idx,
+                            interfaces_off=interfaces_off,
+                            source_file_idx=source_file_idx,
+                            annotations_off=annotations_off,
+                            class_data_off=class_data_off,
+                            static_values_off=static_values_off,
+                            id_number=i,
+                        ),
+                        class_type=class_type,
+                        superclass=superclass,
+                        source_file=source_file,
+                        interfaces=interfaces,
+                        annotations=annotations,
+                    )
+                )
+
+            self.section_flags |= self.FLAG_PARSED_CLASS_DEFS
+
+            return class_defs
+        finally:
+            clonestream.close()
+
+    async def parse_class_defs_async(self) -> list[DalvikClassDefItem]:
+        """Collect all the dalvik ClassDefs asynchronously.
+
+        This function returns the parsed ClassDefs as a list of
+        :class:`~pydex.dalvik.models.DalvikClassDefItem`.
+        """
+
+        return await asyncio.to_thread(self.parse_class_defs)
 
     @requires_section(FLAG_PARSED_STRINGS)
     def load_all_strings(self) -> list[DalvikStringItem]:

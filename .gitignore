@@ -168,3 +168,4 @@ utils/javaenum2py.py
 .env.secrets
 chat/*.log
 /sample.py
+/source/pipinstall-event

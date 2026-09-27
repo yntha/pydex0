@@ -7,24 +7,10 @@ from typing import ClassVar
 
 from datastream import ByteOrder, DeserializingStream
 
+from pydex.dalvik.models.base import DalvikRawItem
+from pydex.dalvik.models.annotations import DalvikAnnotationsDirectory
 from pydex.util import sizeof_uleb128
 from pydex.exc import InvalidDalvikHeader
-
-
-@dataclass
-class DalvikRawItem:
-    """
-    A dataclass that represents a low-level item in a dex file.
-    """
-
-    #: The offset of the item in the dex file.
-    offset: int
-
-    #: The size of the item in the dex file.
-    size: int
-
-    #: The raw data of the item.
-    data: bytes
 
 
 @dataclass
@@ -757,10 +743,13 @@ class DalvikClassDefItem:
     class_type: DalvikTypeItem
 
     #: The superclass of the class.
-    superclass: DalvikTypeItem
+    superclass: DalvikTypeItem | None
 
     #: The source file of the class.
-    source_file: DalvikStringItem
+    source_file: DalvikStringItem | LazyDalvikString | None
 
     #: The list of interfaces implemented by the class.
     interfaces: DalvikTypeListItem | None
+
+    #: The annotations for the class.
+    annotations: DalvikAnnotationsDirectory | None = None
