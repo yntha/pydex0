@@ -261,6 +261,9 @@ class DalvikAnnotationsDirectory(DalvikRawItem):
     #: List of associated method parameter annotations.
     parameter_annotations: list[DalvikParameterAnnotation]
 
+    #: Annotations made directly on the class.
+    class_annotations: DalvikAnnotationSet | None = None
+
     @classmethod
     def from_stream(cls, stream: DeserializingStream) -> DalvikAnnotationsDirectory:
         """Read an annotations directory from a stream.
@@ -337,6 +340,15 @@ class DalvikAnnotationsDirectory(DalvikRawItem):
             size = clone_stream.tell() - offset
             data = clone_stream.seekpeek(offset, size)
 
+            if class_annotations_off != 0:
+                if class_annotations_off > clone_stream.size() - 4:
+                    raise ValueError("Invalid class annotations offset")
+
+                clone_stream.seek(class_annotations_off)
+                class_annotations = DalvikAnnotationSet.from_stream(clone_stream)
+            else:
+                class_annotations = None
+
             return cls(
                 offset,
                 size,
@@ -348,6 +360,7 @@ class DalvikAnnotationsDirectory(DalvikRawItem):
                 field_annotations,
                 method_annotations,
                 parameter_annotations,
+                class_annotations,
             )
         finally:
             clone_stream.close()

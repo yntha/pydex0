@@ -253,6 +253,9 @@ def test_annotations_directory_parse():
     assert item.size == 40
     assert item.data == data[4:44]
     assert item.class_annotations_off == 44
+    assert item.class_annotations is not None
+    assert item.class_annotations.offset == 44
+    assert item.class_annotations.entries == []
     assert item.fields_size == 1
     assert item.annotated_methods_size == 1
     assert item.annotated_parameters_size == 1
@@ -292,6 +295,7 @@ def test_empty_annotations_directory_parse():
     assert item.size == 16
     assert item.data == data
     assert item.class_annotations_off == 0
+    assert item.class_annotations is None
     assert item.fields_size == 0
     assert item.annotated_methods_size == 0
     assert item.annotated_parameters_size == 0
@@ -314,6 +318,9 @@ def test_annotations_directory_byte_order():
 
     assert item.size == 40
     assert item.class_annotations_off == 40
+    assert item.class_annotations is not None
+    assert item.class_annotations.offset == 40
+    assert item.class_annotations.entries == []
     assert item.fields_size == 1
     assert item.annotated_methods_size == 1
     assert item.annotated_parameters_size == 1
@@ -345,6 +352,51 @@ def test_annotations_directory_truncated_records():
     stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
 
     with pytest.raises(ValueError, match="Corrupted annotations directory"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_class_annotations():
+    data = (
+        b"\x00\x00\x00\x00"
+        b"\x14\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x01\x00\x00\x00\x1c\x00\x00\x00"
+        b"\x01\x02\x01\x03\x04\x2a"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    stream.seek(4)
+
+    item = DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert item.offset == 4
+    assert item.size == 16
+    assert item.data == data[4:20]
+    assert item.class_annotations is not None
+    assert item.class_annotations.offset == 20
+    assert item.class_annotations.length == 1
+    annotation = item.class_annotations.entries[0]
+    assert annotation.offset == 28
+    assert annotation.visibility is DalvikAnnotationVisibility.VISIBILITY_RUNTIME
+    assert annotation.annotation.type_idx == 2
+    assert annotation.annotation.elements[0][0] == 3
+    assert annotation.annotation.elements[0][1].value == 42
+    assert stream.tell() == 4
+
+
+def test_annotations_directory_invalid_class_annotations_offset():
+    data = b"\xff\x00\x00\x00" + b"\x00" * 12
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid class annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+    data = b"\x10\x00\x00\x00" + b"\x00" * 14
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid class annotations offset"):
         DalvikAnnotationsDirectory.from_stream(stream)
 
     assert stream.tell() == 0

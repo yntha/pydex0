@@ -112,7 +112,8 @@ def test_class_def_annotations():
     data = bytearray(get_test_dex())
     annotations_off = len(data)
     data += (
-        b"\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        (annotations_off + 24).to_bytes(4, "little")
+        + b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         b"\x00\x00\x00\x00"
         + (annotations_off + 24).to_bytes(4, "little")
         + b"\x00\x00\x00\x00"
@@ -131,7 +132,10 @@ def test_class_def_annotations():
     assert annotations.offset == annotations_off
     assert annotations.size == 24
     assert annotations.data == data[annotations_off : annotations_off + 24]
-    assert annotations.class_annotations_off == 0
+    assert annotations.class_annotations_off == annotations_off + 24
+    assert annotations.class_annotations is not None
+    assert annotations.class_annotations.offset == annotations_off + 24
+    assert annotations.class_annotations.entries == []
     assert annotations.fields_size == 1
     assert annotations.field_annotations[0].field_idx == 0
     assert annotations.field_annotations[0].annotations_off == annotations_off + 24
