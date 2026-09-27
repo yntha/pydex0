@@ -8,7 +8,6 @@ from typing import Any
 from datastream import ByteOrder, DeserializingStream
 
 from pydex.dalvik.models.base import DalvikRawItem
-from pydex.util import sizeof_uleb128
 
 
 class DalvikValueFormats(enum.IntEnum):
@@ -255,11 +254,9 @@ class DalvikEncodedValue(DalvikRawItem):
         value_format = DalvikValueFormats(value_id & 0x1F)
 
         if value_format == DalvikValueFormats.VALUE_ARRAY:
-            # only read the size of the encoded element
-            size = clone_stream.read_uleb128()
+            size = DalvikEncodedArray.from_stream(clone_stream).size
         elif value_format == DalvikValueFormats.VALUE_ANNOTATION:
-            # type_idx.size + size
-            size = sizeof_uleb128(clone_stream.read_uleb128()) + clone_stream.read_uleb128()
+            size = DalvikEncodedAnnotation.from_stream(clone_stream).size
         elif value_format in (DalvikValueFormats.VALUE_NULL, DalvikValueFormats.VALUE_BOOLEAN):
             size = 0
         else:

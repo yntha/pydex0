@@ -173,3 +173,83 @@ def test_empty_encoded_annotation_parse():
     assert annotation.length == 0
     assert annotation.elements == []
     assert stream.tell() == 2
+
+
+def test_encoded_array_value_parse():
+    stream = DeserializingStream(b"\xff\x1c\x03\x04\x2a\x3f\x1e\xff", ByteOrder.LITTLE_ENDIAN)
+    stream.seek(1)
+
+    value = DalvikEncodedValue.from_stream(stream)
+    array = value.value
+
+    assert value.offset == 1
+    assert value.size == 6
+    assert value.data == b"\x1c\x03\x04\x2a\x3f\x1e"
+    assert array.size == 5
+    assert array.length == 3
+    assert array.values[0].value == 42
+    assert array.values[1].value is True
+    assert array.values[2].value is None
+    assert stream.tell() == 1
+
+
+def test_encoded_annotation_value_parse():
+    stream = DeserializingStream(b"\xff\x1d\x80\x01\x02\x80\x01\x04\x2a\x81\x01\x3f\xff", ByteOrder.LITTLE_ENDIAN)
+    stream.seek(1)
+
+    value = DalvikEncodedValue.from_stream(stream)
+    annotation = value.value
+
+    assert value.offset == 1
+    assert value.size == 11
+    assert value.data == b"\x1d\x80\x01\x02\x80\x01\x04\x2a\x81\x01\x3f"
+    assert annotation.size == 10
+    assert annotation.type_idx == 128
+    assert annotation.length == 2
+    assert annotation.elements[0][0] == 128
+    assert annotation.elements[0][1].value == 42
+    assert annotation.elements[1][0] == 129
+    assert annotation.elements[1][1].value is True
+    assert stream.tell() == 1
+
+
+def test_empty_encoded_array_value_parse():
+    value = get_encoded_value(b"\x1c\x00")
+
+    assert value.size == 2
+    assert value.data == b"\x1c\x00"
+    assert value.value.length == 0
+    assert value.value.values == []
+
+
+def test_empty_encoded_annotation_value_parse():
+    value = get_encoded_value(b"\x1d\x01\x00")
+
+    assert value.size == 3
+    assert value.data == b"\x1d\x01\x00"
+    assert value.value.type_idx == 1
+    assert value.value.length == 0
+    assert value.value.elements == []
+
+
+def test_nested_encoded_value_parse():
+    value = get_encoded_value(b"\x1c\x03\x1c\x01\x24\x80\x00\x1d\x01\x01\x02\x1c\x01\x3f\x1e")
+    array = value.value
+
+    assert value.size == 15
+    assert array.length == 3
+
+    # array with an int
+    assert array.values[0].size == 5
+    assert array.values[0].value.values[0].value == 128
+
+    # annotation with an array
+    annotation = array.values[1].value
+    assert array.values[1].size == 7
+    assert annotation.type_idx == 1
+    assert annotation.elements[0][0] == 2
+    assert annotation.elements[0][1].value.values[0].value is True
+
+    # null after both nested values
+    assert array.values[2].size == 1
+    assert array.values[2].value is None
