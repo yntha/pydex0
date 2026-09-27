@@ -269,6 +269,9 @@ def test_annotations_directory_parse():
     assert field.data == data[20:28]
     assert field.field_idx == 7
     assert field.annotations_off == 44
+    assert field.annotations is not None
+    assert field.annotations.offset == 44
+    assert field.annotations.entries == []
 
     method = item.method_annotations[0]
     assert method.offset == 28
@@ -276,6 +279,9 @@ def test_annotations_directory_parse():
     assert method.data == data[28:36]
     assert method.method_idx == 11
     assert method.annotations_off == 44
+    assert method.annotations is not None
+    assert method.annotations.offset == 44
+    assert method.annotations.entries == []
 
     parameter = item.parameter_annotations[0]
     assert parameter.offset == 36
@@ -283,6 +289,9 @@ def test_annotations_directory_parse():
     assert parameter.data == data[36:44]
     assert parameter.method_idx == 11
     assert parameter.annotations_off == 48
+    assert parameter.annotations is not None
+    assert parameter.annotations.offset == 48
+    assert parameter.annotations.entries == []
     assert stream.tell() == 4
 
 
@@ -326,10 +335,17 @@ def test_annotations_directory_byte_order():
     assert item.annotated_parameters_size == 1
     assert item.field_annotations[0].field_idx == 256
     assert item.field_annotations[0].annotations_off == 40
+    assert item.field_annotations[0].annotations is not None
+    assert item.field_annotations[0].annotations.offset == 40
+    assert item.field_annotations[0].annotations.entries == []
     assert item.method_annotations[0].method_idx == 512
     assert item.method_annotations[0].annotations_off == 40
+    assert item.method_annotations[0].annotations is not None
+    assert item.method_annotations[0].annotations.entries == []
     assert item.parameter_annotations[0].method_idx == 512
     assert item.parameter_annotations[0].annotations_off == 44
+    assert item.parameter_annotations[0].annotations is not None
+    assert item.parameter_annotations[0].annotations.entries == []
     assert stream.tell() == 0
 
 
@@ -397,6 +413,150 @@ def test_annotations_directory_invalid_class_annotations_offset():
     stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
 
     with pytest.raises(ValueError, match="Invalid class annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_field_annotations():
+    data = (
+        b"\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x07\x00\x00\x00\x28\x00\x00\x00"
+        b"\x08\x00\x00\x00\x24\x00\x00\x00"
+        b"\x00\x00\x00\x00"
+        b"\x01\x00\x00\x00\x30\x00\x00\x00"
+        b"\x01\x02\x01\x03\x04\x2a"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    stream.seek(4)
+
+    item = DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert item.offset == 4
+    assert item.size == 32
+    assert item.data == data[4:36]
+    assert len(item.field_annotations) == 2
+    first = item.field_annotations[0]
+    assert first.field_idx == 7
+    assert first.offset == 20
+    assert first.size == 8
+    assert first.data == data[20:28]
+    assert first.annotations is not None
+    assert first.annotations.offset == 40
+    assert first.annotations.length == 1
+    annotation = first.annotations.entries[0]
+    assert annotation.offset == 48
+    assert annotation.visibility is DalvikAnnotationVisibility.VISIBILITY_RUNTIME
+    assert annotation.annotation.type_idx == 2
+    assert annotation.annotation.elements[0][1].value == 42
+
+    second = item.field_annotations[1]
+    assert second.field_idx == 8
+    assert second.annotations is not None
+    assert second.annotations.offset == 36
+    assert second.annotations.entries == []
+    assert stream.tell() == 4
+
+
+def test_annotations_directory_invalid_field_annotations_offset():
+    data = (
+        b"\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x07\x00\x00\x00\x00\x00\x00\x00"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid field annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+    stream = DeserializingStream(data[:20] + b"\xff\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid field annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_method_and_parameter_annotations():
+    data = (
+        b"\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x30\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x24\x00\x00\x00"
+        b"\x02\x00\x00\x00\x00\x00\x00\x00\x30\x00\x00\x00"
+        b"\x01\x00\x00\x00\x38\x00\x00\x00"
+        b"\x01\x02\x01\x03\x04\x2a"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    stream.seek(4)
+
+    item = DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert item.size == 32
+    assert item.data == data[4:36]
+    method = item.method_annotations[0]
+    assert method.method_idx == 11
+    assert method.offset == 20
+    assert method.size == 8
+    assert method.data == data[20:28]
+    assert method.annotations is not None
+    assert method.annotations.offset == 48
+    assert method.annotations.length == 1
+    assert method.annotations.entries[0].annotation.elements[0][1].value == 42
+
+    parameter = item.parameter_annotations[0]
+    assert parameter.method_idx == 11
+    assert parameter.offset == 28
+    assert parameter.size == 8
+    assert parameter.data == data[28:36]
+    assert parameter.annotations is not None
+    assert parameter.annotations.offset == 36
+    assert parameter.annotations.length == 2
+    assert parameter.annotations.entries[0] is None
+    second = parameter.annotations.entries[1]
+    assert second is not None
+    assert second.offset == 48
+    assert second.entries[0].annotation.elements[0][1].value == 42
+    assert stream.tell() == 4
+
+
+def test_annotations_directory_invalid_method_annotations_offset():
+    data = (
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x00\x00\x00\x00"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid method annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+    stream = DeserializingStream(data[:20] + b"\xff\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid method annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_invalid_parameter_annotations_offset():
+    data = (
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x00\x00\x00\x00"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid parameter annotations offset"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+    stream = DeserializingStream(data[:20] + b"\xff\x00\x00\x00", ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Invalid parameter annotations offset"):
         DalvikAnnotationsDirectory.from_stream(stream)
 
     assert stream.tell() == 0

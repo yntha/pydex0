@@ -190,6 +190,9 @@ class DalvikFieldAnnotation(DalvikRawItem):
     #: Offset from the start of the file to the list of annotations for the field.
     annotations_off: int  # 4 bytes
 
+    #: List of annotations for the field.
+    annotations: DalvikAnnotationSet | None = None
+
 
 @dataclass
 class DalvikMethodAnnotation(DalvikRawItem):
@@ -209,6 +212,9 @@ class DalvikMethodAnnotation(DalvikRawItem):
     #: Offset from the start of the file to the list of annotations for the method.
     annotations_off: int  # 4 bytes
 
+    #: List of annotations for the method.
+    annotations: DalvikAnnotationSet | None = None
+
 
 @dataclass
 class DalvikParameterAnnotation(DalvikRawItem):
@@ -227,6 +233,9 @@ class DalvikParameterAnnotation(DalvikRawItem):
 
     #: Offset from the start of the file to the list of annotations for the method parameters.
     annotations_off: int  # 4 bytes
+
+    #: List of annotations for the method parameters.
+    annotations: DalvikAnnotationSetRefList | None = None
 
 
 @dataclass
@@ -348,6 +357,30 @@ class DalvikAnnotationsDirectory(DalvikRawItem):
                 class_annotations = DalvikAnnotationSet.from_stream(clone_stream)
             else:
                 class_annotations = None
+
+            for field_annotation in field_annotations:
+                annotations_off = field_annotation.annotations_off
+                if annotations_off == 0 or annotations_off > clone_stream.size() - 4:
+                    raise ValueError("Invalid field annotations offset")
+
+                clone_stream.seek(annotations_off)
+                field_annotation.annotations = DalvikAnnotationSet.from_stream(clone_stream)
+
+            for method_annotation in method_annotations:
+                annotations_off = method_annotation.annotations_off
+                if annotations_off == 0 or annotations_off > clone_stream.size() - 4:
+                    raise ValueError("Invalid method annotations offset")
+
+                clone_stream.seek(annotations_off)
+                method_annotation.annotations = DalvikAnnotationSet.from_stream(clone_stream)
+
+            for parameter_annotation in parameter_annotations:
+                annotations_off = parameter_annotation.annotations_off
+                if annotations_off == 0 or annotations_off > clone_stream.size() - 4:
+                    raise ValueError("Invalid parameter annotations offset")
+
+                clone_stream.seek(annotations_off)
+                parameter_annotation.annotations = DalvikAnnotationSetRefList.from_stream(clone_stream)
 
             return cls(
                 offset,

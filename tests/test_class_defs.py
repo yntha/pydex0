@@ -112,15 +112,19 @@ def test_class_def_annotations():
     data = bytearray(get_test_dex())
     annotations_off = len(data)
     data += (
-        (annotations_off + 24).to_bytes(4, "little")
-        + b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        b"\x00\x00\x00\x00"
-        + (annotations_off + 24).to_bytes(4, "little")
+        (annotations_off + 40).to_bytes(4, "little")
+        + b"\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00"
         + b"\x00\x00\x00\x00"
+        + (annotations_off + 40).to_bytes(4, "little")
+        + b"\x02\x00\x00\x00"
+        + (annotations_off + 40).to_bytes(4, "little")
+        + b"\x02\x00\x00\x00"
+        + (annotations_off + 44).to_bytes(4, "little")
+        + b"\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00"
     )
     data[268:272] = annotations_off.to_bytes(4, "little")
     data[32:36] = len(data).to_bytes(4, "little")
-    data_size = int.from_bytes(data[104:108], "little") + 28
+    data_size = int.from_bytes(data[104:108], "little") + 52
     data[104:108] = data_size.to_bytes(4, "little")
     data[12:32] = hashlib.sha1(data[32:]).digest()
     data[8:12] = zlib.adler32(data[12:]).to_bytes(4, "little")
@@ -130,17 +134,28 @@ def test_class_def_annotations():
 
     assert annotations is not None
     assert annotations.offset == annotations_off
-    assert annotations.size == 24
-    assert annotations.data == data[annotations_off : annotations_off + 24]
-    assert annotations.class_annotations_off == annotations_off + 24
+    assert annotations.size == 40
+    assert annotations.data == data[annotations_off : annotations_off + 40]
+    assert annotations.class_annotations_off == annotations_off + 40
     assert annotations.class_annotations is not None
-    assert annotations.class_annotations.offset == annotations_off + 24
+    assert annotations.class_annotations.offset == annotations_off + 40
     assert annotations.class_annotations.entries == []
     assert annotations.fields_size == 1
     assert annotations.field_annotations[0].field_idx == 0
-    assert annotations.field_annotations[0].annotations_off == annotations_off + 24
-    assert annotations.method_annotations == []
-    assert annotations.parameter_annotations == []
+    assert annotations.field_annotations[0].annotations_off == annotations_off + 40
+    assert annotations.field_annotations[0].annotations is not None
+    assert annotations.field_annotations[0].annotations.offset == annotations_off + 40
+    assert annotations.field_annotations[0].annotations.entries == []
+    assert annotations.annotated_methods_size == 1
+    assert annotations.method_annotations[0].method_idx == 2
+    assert annotations.method_annotations[0].annotations is not None
+    assert annotations.method_annotations[0].annotations.offset == annotations_off + 40
+    assert annotations.method_annotations[0].annotations.entries == []
+    assert annotations.annotated_parameters_size == 1
+    assert annotations.parameter_annotations[0].method_idx == 2
+    assert annotations.parameter_annotations[0].annotations is not None
+    assert annotations.parameter_annotations[0].annotations.offset == annotations_off + 44
+    assert annotations.parameter_annotations[0].annotations.entries == [None]
 
     dex.stream.seek(12)
     assert dex.parse_class_defs() == dex.class_defs
