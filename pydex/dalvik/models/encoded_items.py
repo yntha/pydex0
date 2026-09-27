@@ -327,7 +327,7 @@ class DalvikEncodedAnnotation(DalvikRawItem):
 
     type_idx: int
 
-    size: int  # uleb128
+    length: int  # uleb128
 
     elements: list
 
@@ -335,13 +335,17 @@ class DalvikEncodedAnnotation(DalvikRawItem):
     def from_stream(cls, stream: DeserializingStream) -> DalvikEncodedAnnotation:
         offset = stream.tell()
         type_idx = stream.read_uleb128()
-        size = stream.read_uleb128()
+        length = stream.read_uleb128()
         elements = []
 
-        for _ in range(size):
+        for _ in range(length):
             name_idx = stream.read_uleb128()
             value = DalvikEncodedValue.from_stream(stream)
 
             elements.append((name_idx, value))
+            stream.seek(value.offset + value.size)
 
-        return cls(offset, type_idx, size, elements, stream.read(stream.tell() - offset))
+        size = stream.tell() - offset
+        data = stream.seekpeek(offset, size)
+
+        return cls(offset, size, data, type_idx, length, elements)

@@ -2,7 +2,7 @@ import pytest
 
 from datastream import ByteOrder, DeserializingStream
 
-from pydex.dalvik.models.encoded_items import DalvikEncodedValue, DalvikEncodedArray
+from pydex.dalvik.models.encoded_items import DalvikEncodedValue, DalvikEncodedArray, DalvikEncodedAnnotation
 
 
 def get_encoded_value(data: bytes) -> DalvikEncodedValue:
@@ -137,3 +137,39 @@ def test_empty_encoded_array_parse():
     assert array.data == b"\x00"
     assert array.length == 0
     assert array.values == []
+
+
+def test_encoded_annotation_parse():
+    stream = DeserializingStream(b"\xff\x80\x01\x02\x80\x01\x04\x2a\x81\x01\x3f\xff", ByteOrder.LITTLE_ENDIAN)
+    stream.seek(1)
+
+    annotation = DalvikEncodedAnnotation.from_stream(stream)
+
+    assert annotation.offset == 1
+    assert annotation.size == 10
+    assert annotation.data == b"\x80\x01\x02\x80\x01\x04\x2a\x81\x01\x3f"
+    assert annotation.type_idx == 128
+    assert annotation.length == 2
+
+    assert annotation.elements[0][0] == 128
+    assert annotation.elements[0][1].value == 42
+    assert annotation.elements[0][1].offset == 6
+
+    assert annotation.elements[1][0] == 129
+    assert annotation.elements[1][1].value is True
+    assert annotation.elements[1][1].offset == 10
+
+    assert stream.tell() == 11
+    assert stream.read_uint8() == 0xFF
+
+
+def test_empty_encoded_annotation_parse():
+    stream = DeserializingStream(b"\x01\x00", ByteOrder.LITTLE_ENDIAN)
+    annotation = DalvikEncodedAnnotation.from_stream(stream)
+
+    assert annotation.size == 2
+    assert annotation.data == b"\x01\x00"
+    assert annotation.type_idx == 1
+    assert annotation.length == 0
+    assert annotation.elements == []
+    assert stream.tell() == 2
