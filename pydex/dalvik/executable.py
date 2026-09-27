@@ -545,7 +545,14 @@ class DexFile:
                     ),
                     self.types,
                 )
-                param_string_list = [x.descriptor.value for x in param_type_list.types]
+                param_string_list = []
+                for type_item in param_type_list.types:
+                    if isinstance(type_item.descriptor, LazyDalvikString):
+                        descriptor = type_item.descriptor.load(clonestream)
+                    else:
+                        descriptor = type_item.descriptor
+
+                    param_string_list.append(descriptor.value)
             else:
                 param_type_list = None
                 param_string_list = None
