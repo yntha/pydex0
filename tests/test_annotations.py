@@ -7,6 +7,7 @@ from pydex.dalvik.models import (
     DalvikAnnotationVisibility,
     DalvikAnnotationSet,
     DalvikAnnotationSetRefList,
+    DalvikAnnotationsDirectory,
 )
 
 
@@ -230,5 +231,120 @@ def test_annotation_set_ref_list_invalid_offset():
 
     with pytest.raises(ValueError, match="Invalid annotation set offset"):
         DalvikAnnotationSetRefList.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_parse():
+    data = (
+        b"\x00\x00\x00\x00"
+        b"\x2c\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00"
+        b"\x07\x00\x00\x00\x2c\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x2c\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x30\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\x00"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    stream.seek(4)
+
+    item = DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert item.offset == 4
+    assert item.size == 40
+    assert item.data == data[4:44]
+    assert item.class_annotations_off == 44
+    assert item.fields_size == 1
+    assert item.annotated_methods_size == 1
+    assert item.annotated_parameters_size == 1
+    assert len(item.field_annotations) == 1
+    assert len(item.method_annotations) == 1
+    assert len(item.parameter_annotations) == 1
+
+    field = item.field_annotations[0]
+    assert field.offset == 20
+    assert field.size == 8
+    assert field.data == data[20:28]
+    assert field.field_idx == 7
+    assert field.annotations_off == 44
+
+    method = item.method_annotations[0]
+    assert method.offset == 28
+    assert method.size == 8
+    assert method.data == data[28:36]
+    assert method.method_idx == 11
+    assert method.annotations_off == 44
+
+    parameter = item.parameter_annotations[0]
+    assert parameter.offset == 36
+    assert parameter.size == 8
+    assert parameter.data == data[36:44]
+    assert parameter.method_idx == 11
+    assert parameter.annotations_off == 48
+    assert stream.tell() == 4
+
+
+def test_empty_annotations_directory_parse():
+    data = b"\x00" * 16
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+    item = DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert item.offset == 0
+    assert item.size == 16
+    assert item.data == data
+    assert item.class_annotations_off == 0
+    assert item.fields_size == 0
+    assert item.annotated_methods_size == 0
+    assert item.annotated_parameters_size == 0
+    assert item.field_annotations == []
+    assert item.method_annotations == []
+    assert item.parameter_annotations == []
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_byte_order():
+    data = (
+        b"\x00\x00\x00\x28\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01"
+        b"\x00\x00\x01\x00\x00\x00\x00\x28"
+        b"\x00\x00\x02\x00\x00\x00\x00\x28"
+        b"\x00\x00\x02\x00\x00\x00\x00\x2c"
+        b"\x00\x00\x00\x00\x00\x00\x00\x00"
+    )
+    stream = DeserializingStream(data, ByteOrder.BIG_ENDIAN)
+    item = DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert item.size == 40
+    assert item.class_annotations_off == 40
+    assert item.fields_size == 1
+    assert item.annotated_methods_size == 1
+    assert item.annotated_parameters_size == 1
+    assert item.field_annotations[0].field_idx == 256
+    assert item.field_annotations[0].annotations_off == 40
+    assert item.method_annotations[0].method_idx == 512
+    assert item.method_annotations[0].annotations_off == 40
+    assert item.parameter_annotations[0].method_idx == 512
+    assert item.parameter_annotations[0].annotations_off == 44
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_truncated_header():
+    stream = DeserializingStream(b"\x00" * 12, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Corrupted annotations directory"):
+        DalvikAnnotationsDirectory.from_stream(stream)
+
+    assert stream.tell() == 0
+
+
+def test_annotations_directory_truncated_records():
+    data = (
+        b"\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00"
+        b"\x07\x00\x00\x00\x00\x00\x00\x00"
+        b"\x0b\x00\x00\x00\x00\x00\x00\x00"
+        b"\x0b\x00\x00\x00"
+    )
+    stream = DeserializingStream(data, ByteOrder.LITTLE_ENDIAN)
+
+    with pytest.raises(ValueError, match="Corrupted annotations directory"):
+        DalvikAnnotationsDirectory.from_stream(stream)
 
     assert stream.tell() == 0

@@ -28,6 +28,10 @@ from pydex.dalvik.models.annotations import (
     DalvikAnnotationVisibility,
     DalvikAnnotationSet,
     DalvikAnnotationSetRefList,
+    DalvikFieldAnnotation,
+    DalvikMethodAnnotation,
+    DalvikParameterAnnotation,
+    DalvikAnnotationsDirectory,
 )
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import ClassVar
 
 from datastream import DeserializingStream
 
@@ -167,5 +168,186 @@ class DalvikAnnotationSetRefList(DalvikRawItem):
                 entries.append(DalvikAnnotationSet.from_stream(clone_stream))
 
             return cls(offset, size, data, length, entries)
+        finally:
+            clone_stream.close()
+
+
+@dataclass
+class DalvikFieldAnnotation(DalvikRawItem):
+    """A dataclass that represents a ``field_annotation`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::field_annotation <https://source.android.com/docs/core/runtime/dex-format#field-annotation>`_
+    """
+
+    struct_size: ClassVar[int] = 0x08
+
+    #: Index into the ``field_ids`` list for the identity of the field being annotated.
+    field_idx: int  # 4 bytes
+
+    #: Offset from the start of the file to the list of annotations for the field.
+    annotations_off: int  # 4 bytes
+
+
+@dataclass
+class DalvikMethodAnnotation(DalvikRawItem):
+    """A dataclass that represents a ``method_annotation`` in a dex file.
+    
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::method_annotation <https://source.android.com/docs/core/runtime/dex-format#method-annotation>`_
+    """
+
+    struct_size: ClassVar[int] = 0x08
+
+    #: Index into the ``method_ids`` list for the identity of the method being annotated.
+    method_idx: int  # 4 bytes
+
+    #: Offset from the start of the file to the list of annotations for the method.
+    annotations_off: int  # 4 bytes
+
+
+@dataclass
+class DalvikParameterAnnotation(DalvikRawItem):
+    """A dataclass that represents a ``parameter_annotation`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::parameter_annotation <https://source.android.com/docs/core/runtime/dex-format#parameter-annotation>`_
+    """
+
+    struct_size: ClassVar[int] = 0x08
+
+    #: Index into the ``method_ids`` list for the identity of the method whose parameters are being annotated.
+    method_idx: int  # 4 bytes
+
+    #: Offset from the start of the file to the list of annotations for the method parameters.
+    annotations_off: int  # 4 bytes
+
+
+@dataclass
+class DalvikAnnotationsDirectory(DalvikRawItem):
+    """
+    A dataclass that represents an ``annotations_directory_item`` in a dex file.
+
+    .. admonition:: Source
+        :class: seealso
+
+        `dex_format::annotations_directory_item <https://source.android.com/docs/core/runtime/dex-format#annotations-directory-item>`_
+    """
+
+    #: Offset from the start of the file to the annotations made directly on the class.
+    class_annotations_off: int  # 4 bytes
+
+    #: Count of fields annotated by this item.
+    fields_size: int  # 4 bytes
+
+    #: Count of methods annotated by this item.
+    annotated_methods_size: int  # 4 bytes
+
+    #: Count of method parameter lists annotated by this item.
+    annotated_parameters_size: int  # 4 bytes
+
+    #: List of associated field annotations.
+    field_annotations: list[DalvikFieldAnnotation]
+
+    #: List of associated method annotations.
+    method_annotations: list[DalvikMethodAnnotation]
+
+    #: List of associated method parameter annotations.
+    parameter_annotations: list[DalvikParameterAnnotation]
+
+    @classmethod
+    def from_stream(cls, stream: DeserializingStream) -> DalvikAnnotationsDirectory:
+        """Read an annotations directory from a stream.
+
+        Args:
+            DeserializingStream stream: The stream to read from.
+        """
+        clone_stream = stream.clone()
+        clone_stream.seek(stream.tell())
+
+        try:
+            offset = clone_stream.tell()
+            if clone_stream.remaining() < 16:
+                raise ValueError("Corrupted annotations directory")
+
+            class_annotations_off = clone_stream.read_uint32()
+            fields_size = clone_stream.read_uint32()
+            annotated_methods_size = clone_stream.read_uint32()
+            annotated_parameters_size = clone_stream.read_uint32()
+
+            records_size = (
+                fields_size * DalvikFieldAnnotation.struct_size
+                + annotated_methods_size * DalvikMethodAnnotation.struct_size
+                + annotated_parameters_size * DalvikParameterAnnotation.struct_size
+            )
+            if records_size > clone_stream.remaining():
+                raise ValueError("Corrupted annotations directory")
+
+            field_annotations = []
+            for _ in range(fields_size):
+                field_off = clone_stream.tell()
+                field_idx = clone_stream.read_uint32()
+                annotations_off = clone_stream.read_uint32()
+                field_annotations.append(
+                    DalvikFieldAnnotation(
+                        field_off,
+                        DalvikFieldAnnotation.struct_size,
+                        clone_stream.seekpeek(field_off, DalvikFieldAnnotation.struct_size),
+                        field_idx,
+                        annotations_off,
+                    )
+                )
+
+            method_annotations = []
+            for _ in range(annotated_methods_size):
+                method_off = clone_stream.tell()
+                method_idx = clone_stream.read_uint32()
+                annotations_off = clone_stream.read_uint32()
+                method_annotations.append(
+                    DalvikMethodAnnotation(
+                        method_off,
+                        DalvikMethodAnnotation.struct_size,
+                        clone_stream.seekpeek(method_off, DalvikMethodAnnotation.struct_size),
+                        method_idx,
+                        annotations_off,
+                    )
+                )
+
+            parameter_annotations = []
+            for _ in range(annotated_parameters_size):
+                parameter_off = clone_stream.tell()
+                method_idx = clone_stream.read_uint32()
+                annotations_off = clone_stream.read_uint32()
+                parameter_annotations.append(
+                    DalvikParameterAnnotation(
+                        parameter_off,
+                        DalvikParameterAnnotation.struct_size,
+                        clone_stream.seekpeek(parameter_off, DalvikParameterAnnotation.struct_size),
+                        method_idx,
+                        annotations_off,
+                    )
+                )
+
+            size = clone_stream.tell() - offset
+            data = clone_stream.seekpeek(offset, size)
+
+            return cls(
+                offset,
+                size,
+                data,
+                class_annotations_off,
+                fields_size,
+                annotated_methods_size,
+                annotated_parameters_size,
+                field_annotations,
+                method_annotations,
+                parameter_annotations,
+            )
         finally:
             clone_stream.close()
